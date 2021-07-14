@@ -102,6 +102,7 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
     } else {
       str_val00 <- dispest0
       convge = -1
+      Lval0 <- NULL
     }
     M <- M+1
     if(Verbose==TRUE){ 

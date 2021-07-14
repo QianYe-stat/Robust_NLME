@@ -6,6 +6,11 @@ get_nlme_loglike <- function(nlmeObject){
   sigma.fixed <- sigmaInfo$fixed
   sigma.loglike <- sigmaInfo$loglike
   sigma.str <- sigmaInfo$str.val
+  sigma.lower <- sigmaInfo$lower
+  sigma.upper <- sigmaInfo$upper
+  sigma.df <- sigmaInfo$df
+  
+  ranCovObject <- nlmeObject$ran.Cov
   ##################
   
   resp <- strsplit(as.character(nlmeObject$model), "~",  fixed=T)[[2]]
@@ -66,10 +71,10 @@ get_nlme_loglike <- function(nlmeObject){
     disp=NULL
     randisp=NULL}
   
-  disp.eff <- paste0(disp, rep("*", p), paste0("exp(", randisp, ")"))
+  disp.eff <- paste0(disp, rep("*", p), paste0("exp(0.5*", randisp, ")"))
   toteff <- paste0(fixed, rep("+", p), paste0(raneff, rep("*",p), disp.eff)) 
   
-  mu <- paste0("nf(", paste0(toteff, collapse = ","), ",day)")
+  mu <- paste0("nf(", paste0(toteff, collapse = ","),"," ,paste0(rvX, collapse = ","), ")")
   
   if (nlmeObject$family=="normal"){ 
     
@@ -101,17 +106,27 @@ get_nlme_loglike <- function(nlmeObject){
   if(is.null(nlmeObject$lower.disp))  nlmeObject$lower.disp <- rep(0, q)
   if(is.null(nlmeObject$upper.disp))  nlmeObject$upper.disp <- rep(Inf, q)
   
-  lower.disp <- c(nlmeObject$lower.disp, -Inf, -Inf)
-  upper.disp <- c(nlmeObject$upper.disp, Inf, Inf)
+  lower.disp <- c(nlmeObject$lower.disp, sigma.lower)
+  upper.disp <- c(nlmeObject$upper.disp, sigma.upper)
   names(lower.disp) <- names(upper.disp) <- c(disp,sigma.fixed)
+  
+  lower.fixed <- nlmeObject$lower.fixed
+  upper.fixed <- nlmeObject$upper.fixed
+  if(is.null(lower.fixed)) lower.fixed <- rep(-Inf, p)
+  if(is.null(upper.fixed)) upper.fixed <- rep(Inf, p)
+  
+  names(lower.fixed) <- names(upper.fixed) <- fixed
   
   return(list(loglike=list(mu.loglike=loglike, sigma.loglike=sigma.loglike, 
                            randisp.loglike=randisp.loglike,ran.loglike=ran.loglike),
               fixed.par=fixed, ran.eff=c(raneff,sigma.raneff, randisp), disp.par=c(disp,sigma.fixed),
               str.fixed=str.fixed, str.disp=str.disp,
+              lower.fixed=lower.fixed, upper.fixed=upper.fixed,
               lower.disp=lower.disp, upper.disp=upper.disp,
               response=resp,
               rvX=rvX,
               SIGMA.dim=q,
+              ran.eff.dim=c(length(raneff),length(sigma.raneff), length(randisp)),
+              sigma.df=sigma.df, randisp.df=ranCovObject$df,
               nf=nlmeObject$nf))
 }

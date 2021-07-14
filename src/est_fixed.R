@@ -1,7 +1,7 @@
 est_fixed <- function(RespLog, long.data, Jfixed,
                       fixedest0, dispest0, invSIGMA0,
                       Bi, B, 
-                      lower,
+                      lower, upper,
                       Verbose=TRUE){
   
   n <- nrow(Bi)
@@ -66,17 +66,12 @@ est_fixed <- function(RespLog, long.data, Jfixed,
   
   if(Verbose==TRUE) check<-1  else check<-0
   
-  if(is.null(lower)){
-    lower= -Inf; method="BFGS"
-  } else {
-    method="L-BFGS-B"
-  }
-  
+
   while(convge != 0 & M<20){
     
     str_val0 <- sapply(str_val0, function(x)x+rnorm(1,0, min(1, abs(x/5))))
-    
-    result <- try(optim(par=str_val0, fn=ff, gr=gr,method=method,lower=lower,
+    p <- length(str_val0)
+    result <- try(optim(par=str_val0, fn=ff, gr=gr,method="L-BFGS-B",lower=lower, upper=upper,
                         control = list(trace=check,maxit=1000)),silent=TRUE)
     
     error_mess <- attr(result, "class")
@@ -86,6 +81,7 @@ est_fixed <- function(RespLog, long.data, Jfixed,
       str_val0 <- result$par
     } else {
       convge = -1
+      str_val0 <- fixedest0
     }
     M <- M+1
     if(Verbose==TRUE){ 

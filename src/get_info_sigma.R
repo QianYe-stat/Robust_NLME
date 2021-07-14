@@ -1,5 +1,5 @@
 
-get_info_sigma<- function(sigmaObejct){
+get_info_sigma<- function(sigmaObject){
   
   sp1 <- strsplit(as.character(as.formula(sigmaObject$model)), "~",  fixed=T)
   
@@ -49,9 +49,16 @@ get_info_sigma<- function(sigmaObejct){
   }
   
   str.val <- sigmaObject$str.val
-  names(str.val) <- fixed
+  lower <- sigmaObject$lower
+  upper<- sigmaObject$upper
   
-  return(list(sigmaExpr=sigma_expr, loglike=raneff_loglike, raneff=raneff, fixed=fixed, str.val=str.val))
+  if(is.null(lower)) lower <- rep(-Inf, p)
+  if(is.null(upper)) upper <- rep(Inf, p)
+  
+  names(str.val) <- names(lower) <- names(upper) <- fixed
+  
+  return(list(sigmaExpr=sigma_expr, loglike=raneff_loglike, raneff=raneff, fixed=fixed, 
+              df=sigmaObject$df,str.val=str.val,lower=lower, upper=upper))
 }
 
 
