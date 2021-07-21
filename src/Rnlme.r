@@ -45,13 +45,13 @@ Rnlme <- function(nlmeObject, long.data, idVar,
   
   
   #################################### condition for iteration
-  likDiff <- Diff <- 1
+  likDiff <- Diff <- Diff0 <- 1
   convergence <- 1
   M <- 1
   
-  while(likDiff > itertol & Diff > Ptol & M < iterMax) {
+  while(!(likDiff <= itertol | (Diff <= Ptol & Diff0 <= Ptol) | M > iterMax)) {
     #################################### estimation
-    
+    Diff0 <- Diff
     cat("############## Iteration:", M, "###############","\n")
     
     # estimate random effects
@@ -135,8 +135,8 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     message("Successful convergence. Iteration stops because likDiff <= itertol.")
     convergence <- 0
   }
-  if(Diff <= Ptol){
-    message("Successful convergence. Iteration stops because FixedParDiff <= Ptol.")
+  if(Diff <= Ptol & Diff0 <= Ptol){
+    message("Successful convergence. Iteration stops because FixedParDiff <= Ptol in two consective iteration.")
     convergence <- 0
   }
   

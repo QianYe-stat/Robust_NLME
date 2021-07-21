@@ -7,6 +7,7 @@ get_sd <- function(RespLog, long.data,
   p <- length(Jfixed)
   q <- length(Jraneff)
   q1 <- q_split[1]
+  n <- nrow(Bi)
   
   pars <- c(Jfixed, Jraneff[c(1:q1)])
 
@@ -23,7 +24,7 @@ get_sd <- function(RespLog, long.data,
   mu.val <- get_Hvalue(Hmat.mu, p+q1, long.data, par.val, B)
  # sigma.val <- get_Hvalue(Hmat.sigma, p+q, data=NULL, par.val, Bi)
  # randisp.val <- get_Hvalue(Hmat.randisp, p+q, data=NULL, par.val, Bi)
-  ran.val <- get_Hvalue(Hmat.ran, p+q1, data=NULL, par.val, Bi)
+  ran.val <- bdiag(diag(0, p), -invSIGMA0*(n))
   
   #Hval <-  as.matrix(-(mu.val+sigma.val+randisp.val+ran.val))
   Hval <-  as.matrix(-(mu.val+ran.val))
