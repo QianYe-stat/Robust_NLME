@@ -13,11 +13,21 @@ est_individual_raneff <- function(RespLog, data, raneff,
     par.val <- c(B.val, fixedest, dispest) 
     par.val$invSIGMA <- invSIGMA
     
-    val <- map(RespLog, function(tt){
-      with(par.val, with(data, eval(parse(text=tt))))
-    })
+    # values from longitudinal data
+    mu.val <- with(par.val, with(data, eval(parse(text=RespLog$mu.loglike))))
     
-    fy <- sum(unlist(val))
+    # values from residual dispersion model
+    sigma.val <- with(par.val, eval(parse(text=RespLog$sigma.loglike)))
+    
+    # values from random eff dispersion model
+    if(Yrandisp) {
+      randisp.val <- with(par.val, eval(parse(text=RespLog$randisp.loglike)))
+      } else randisp.val<-0 
+    
+    # values from the distribution of random effect
+    ran.val <- c(with(par.val,  eval(parse(text=RespLog$ran.loglike))))
+    
+    fy <- sum(mu.val)+sigma.val+randisp.val+ ran.val
     # print(fy)
     return(-fy)
   }
