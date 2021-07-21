@@ -8,6 +8,9 @@ library(MASS)
 library(mvtnorm)
 library(tibble)
 library(ggpubr)
+library(matrixcalc)
+library(lbfgs)
+library(Matrix)
 rm(list=ls())
 ########################## source all functions  
 (file.sources = list.files(path=here::here("src"),pattern="*.R$"))
@@ -58,26 +61,8 @@ sigmaObject1 <- list(
   upper=NULL
  )
 
-sigmaObject2 <- list(
-  model=~1+day+(1+day|patid),
-  link='log',
-  ran.dist="inverse-Chi",
-  df=ndf,
-  str.val=c(2*log(nlme.fit1$sigma), coef(sigma.fit)[2]) 
-)
 
-# random effect dispersion model
-ranCovObject1 <- list(
-  varying.disp=~p3,
-  ran.dist="inverse-Chi",
-  df=ndf
-)
 
-ranCovObject2 <- list(
-  varying.disp=~p2+p3,
-  ran.dist="inverse-Chi",
-  df=ndf
-)
 
 
 # mean structure model:  
@@ -92,7 +77,7 @@ nlmeObject1 <- list(
   family='normal', 
   ran.dist='normal',
   sigma=sigmaObject1,    # residual dispersion model (include residual random eff)
-  ran.Cov=ranCovObject1,  # random effect dispersion model (include random random eff (double random eff))
+  ran.Cov=NULL,  # random effect dispersion model (include random random eff (double random eff))
   str.fixed=fixef(nlme.fit1),  # starting value for fixed effect
   str.disp=apply(ranef(nlme.fit1),2,sd),  # starting value for fixed dispersion of random eff
   lower.fixed=NULL, # lower bounds for fixed eff

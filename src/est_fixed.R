@@ -4,6 +4,7 @@ est_fixed <- function(RespLog, long.data, Jfixed,
                       lower, upper,
                       Verbose=TRUE){
   
+  Yrandisp <- !is.null(RespLog$randisp.loglike)
   n <- nrow(Bi)
   
   # ff() returns the negative value of the h-likelihood to be optimized.
@@ -19,7 +20,11 @@ est_fixed <- function(RespLog, long.data, Jfixed,
     # evaluate h-likelihood
     mu.val <- with(long.data, with(par.val, with(B, eval(parse(text=RespLog$mu.loglike)))))
     sigma.val <-  with(par.val, with(Bi, eval(parse(text=RespLog$sigma.loglike))))
-    randisp.val <- with(par.val, with(Bi, eval(parse(text=RespLog$randisp.loglike))))
+    if(Yrandisp) {
+      randisp.val <- with(par.val, with(Bi, eval(parse(text=RespLog$randisp.loglike))))
+    } else {
+      randisp.val <- 0
+      }
     
     ran.val <- vector("list", n)
     for(i in 1:n){
@@ -47,7 +52,7 @@ est_fixed <- function(RespLog, long.data, Jfixed,
     par.val$invSIGMA <- invSIGMA0
     
     
-    gr.mu.val <- gr.sigma.val <- gr.randisp.val <- gr.ran.val <- rep(NA, k)
+    gr.mu.val <- rep(NA, k)
     
     ##
     val <- with(long.data, with(par.val, with(B, eval(parse(text=gr.mu)))))

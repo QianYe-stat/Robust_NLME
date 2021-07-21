@@ -3,7 +3,7 @@ get_summary <- function(output.model, type){
   fix.out <- output.model$fixed
   
   na.index1 <- apply(sd.out,1,FUN=function(t){any(is.na(t))|any(t<0.001)})
-  na.index2 <- apply(fix.out,1,FUN=function(t){any(t>=30)})
+  na.index2 <- apply(fix.out,1,FUN=function(t){any(t>=25)})
   
   na.index <- na.index1|na.index2
   

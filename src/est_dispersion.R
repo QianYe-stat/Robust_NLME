@@ -11,6 +11,8 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
   qL <- length(Lmat$Mpar)
   ran.loglike <- str_replace_all(RespLog$ran.loglike, "invSIGMA", paste0("solve(",Lmat$M, ")"))
   
+  Yrandisp <- !is.null(RespLog$randisp.loglike)
+  
   Jdisp_new <- c(Jdisp, Lmat$Mpar)
   
   # ff() returns the negative value of h-likelihood to be optimized.
@@ -25,8 +27,11 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
     # evaluate the h-likelihood
     mu.val <- with(long.data, with(par.val, with(B, eval(parse(text=RespLog$mu.loglike)))))
     sigma.val <- with(par.val, with(Bi, eval(parse(text=RespLog$sigma.loglike))))
-    randisp.val <- with(par.val, with(Bi, eval(parse(text=RespLog$randisp.loglike))))
-    
+    if(Yrandisp) {
+      randisp.val <- with(par.val, with(Bi, eval(parse(text=RespLog$randisp.loglike))))
+    } else {
+      randisp.val <- 0
+    }
     ran.val <- vector("list", n)
     for(i in 1:n){
       ran.val[[i]] <-  with(par.val, with(Bi[i,], eval(parse(text=ran.loglike))))
@@ -102,7 +107,7 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
     } else {
       str_val00 <- dispest0
       convge = -1
-      Lval0 <- NULL
+
     }
     M <- M+1
     if(Verbose==TRUE){ 

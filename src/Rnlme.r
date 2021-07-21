@@ -45,11 +45,12 @@ Rnlme <- function(nlmeObject, long.data, idVar,
   
   
   #################################### condition for iteration
-  likDiff <- Diff <- 1
+  likDiff <- Diff <- Diff0 <- 1
   convergence <- 1
   M <- 1
   
-  while(likDiff > itertol & Diff > Ptol & M < iterMax) {
+  while(!(likDiff <= itertol | (Diff <= Ptol & Diff0 <= Ptol) |  M > iterMax)) {
+    Diff0 <- Diff
     #################################### estimation
     
     cat("############## Iteration:", M, "###############","\n")
@@ -104,6 +105,7 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     }
     
     # calculate relative changes in mean parameters
+    
     Diff <- mean(c(abs((fixedest - fixedest0)/(fixedest0 + 1e-6))))
     
     
@@ -123,6 +125,7 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     invSIGMA0 <- invSIGMA
     Lval0 <- Lval
     loglike_value0 <- loglike_value
+    
     M <- M+1  
   }
   
@@ -135,8 +138,8 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     message("Successful convergence. Iteration stops because likDiff <= itertol.")
     convergence <- 0
   }
-  if(Diff <= Ptol){
-    message("Successful convergence. Iteration stops because FixedParDiff <= Ptol.")
+  if(Diff0 <= Ptol & Diff <= Ptol){
+    message("Successful convergence. Iteration stops because FixedParDiff <= Ptol in consective two iterations.")
     convergence <- 0
   }
   

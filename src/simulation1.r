@@ -9,9 +9,9 @@ library(mvtnorm)
 library(tibble)
 library(ggpubr)
 rm(list=ls())
-rep <- 200
-n <- 200
-ni <- 10
+rep <- 100
+n <- 300
+ni <- 20
 N <- n*ni
 ti <- seq(0, 1, length.out=ni)
 
@@ -20,13 +20,14 @@ day <- rep(ti, n)
 uniqueID <- seq(1:n)   
 
 beta <- c(3.4, 1.9, 15.7)
-d <- c(0.6, 0.4, 0.9)
+#d <- c(0.6, 0.4, 0.9)
+d <- c(0.6, 0.4, 0.9)*5
 Mat <- matrix(c(1,0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1), ncol=3)
 
 alpha0 <- log(0.02)
 alpha1 <-  5.2
 ndf <- 5
-nf <- function(p1,p2,p3,p4, t, cd) p1+p2*exp(-(p4+p3*cd)*t)
+nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
 fit.df <- 5
 
 ########################## source all functions  
@@ -48,17 +49,6 @@ sigmaObject1 <- list(
   upper=NULL
 )
 
-
-
-# random effect dispersion model
-ranCovObject1 <- list(
-  varying.disp=~p3,
-  ran.dist="inverse-Chi",
-  df=fit.df
-)
-
-
-
 # mean structure model:  
 nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
 
@@ -71,7 +61,7 @@ nlmeObject1 <- list(
   family='normal', 
   ran.dist='normal',
   sigma=sigmaObject1,    # residual dispersion model (include residual random eff)
-  ran.Cov=ranCovObject1,  # random effect dispersion model (include random random eff (double random eff))
+  ran.Cov=NULL,  # random effect dispersion model (include random random eff (double random eff))
   str.fixed=beta,  # starting value for fixed effect
   str.disp=d,  # starting value for fixed dispersion of random eff
   lower.fixed=NULL, # lower bounds for fixed eff
@@ -96,29 +86,21 @@ for(k in 1:rep){
     
     ## generate random effects
     temp <- rchisq(n, df=ndf)
-    a0 <- log(ndf/temp)
-    rm(temp)
+    a0 <- log(ndf/temp) 
     
-    temp <- rchisq(n, df=ndf)
-    expb3 <- ndf/temp
-    
+    D <- diag(d) %*% Mat %*% diag(d)
+    u <- rmvnorm(n, sigma=D)
+
     simdat <- c()
     ## data set
     for(i in 1:n){
       a0i <- a0[i]
-      expb3i <- expb3[i]
-      indexi <- patid==uniqueID[i]
+      ui <- u[1,]
       
       sdi <- sqrt(exp(alpha0+alpha1*ti+a0i))
       errori <- rnorm(ni, sd=sdi)
       
-      di <- d*c(1,1,sqrt(expb3i))
-      
-      Di <- diag(di) %*% Mat %*% diag(di)
-      
-      ui <- rmvnorm(1, sigma=Di)
-      
-      
+
       parami <- cbind(matrix(rep(beta+ui, ni), byrow=TRUE, ncol=length(beta)), ti)
       
       outi <- apply(parami, 1, FUN=function(t){nf(t[1], t[2], t[3], t[4])})
@@ -198,5 +180,5 @@ output.Rnlme <- list(fixed=beta.est, sd=beta.sd, sqErr=beta.SqErr,
 (sum.nlme <- get_summary(output.nlme, type='nlme'))
 (sum.Rnlme <- get_summary(output.Rnlme, type="Rnlme"))
 
-saveRDS(sum.nlme, here::here("data", "Ex1_nlmeRes_n100_rep100.rds"))
-saveRDS(sum.Rnlme, here::here("data", "Ex1_RnlmeRes_n100_rep100.rds"))
+saveRDS(sum.nlme, here::here("data", "Ex1_nlmeRes_n50_ni6_rep100.rds"))
+saveRDS(sum.Rnlme, here::here("data", "Ex1_RnlmeRes_n50_ni6_rep100.rds"))
