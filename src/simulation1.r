@@ -9,9 +9,9 @@ library(mvtnorm)
 library(tibble)
 library(ggpubr)
 rm(list=ls())
-rep <- 100
-n <- 300
-ni <- 20
+rep <- 10
+n <- 50
+ni <- 10
 N <- n*ni
 ti <- seq(0, 1, length.out=ni)
 
@@ -20,8 +20,8 @@ day <- rep(ti, n)
 uniqueID <- seq(1:n)   
 
 beta <- c(3.4, 1.9, 15.7)
-#d <- c(0.6, 0.4, 0.9)
-d <- c(0.6, 0.4, 0.9)*5
+d <- c(0.6, 0.4, 0.9)
+#d <- c(0.6, 0.4, 0.9)*5
 Mat <- matrix(c(1,0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1), ncol=3)
 
 alpha0 <- log(0.02)
@@ -95,7 +95,7 @@ for(k in 1:rep){
     ## data set
     for(i in 1:n){
       a0i <- a0[i]
-      ui <- u[1,]
+      ui <- u[i,]
       
       sdi <- sqrt(exp(alpha0+alpha1*ti+a0i))
       errori <- rnorm(ni, sd=sdi)
