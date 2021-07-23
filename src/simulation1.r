@@ -9,7 +9,7 @@ library(mvtnorm)
 library(tibble)
 library(ggpubr)
 rm(list=ls())
-rep <- 200
+rep <- 50
 n <- 200
 ni <- 10
 N <- n*ni

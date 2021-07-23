@@ -8,9 +8,10 @@ library(MASS)
 library(mvtnorm)
 library(tibble)
 library(ggpubr)
+library(Matrix)
 rm(list=ls())
-rep <- 100
-n <- 50
+rep <- 50
+n <- 100
 ni <- 10
 N <- n*ni
 ti <- seq(0, 1, length.out=ni)
@@ -22,7 +23,7 @@ uniqueID <- seq(1:n)
 d <- c(0.42, 0.13, 0.14)
 beta <- c(2.6, 2.8, -0.5, 8)
 
-Mat <- matrix(c(1,0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1), ncol=3)
+Mat <- matrix(c(1,0.1, 0.1, 0.1, 1, 0.1, 0.1, 0.1, 1), ncol=3)
 
 alpha0 <- log(0.02)
 alpha1 <-  3.4
@@ -76,7 +77,13 @@ nlmeObject1 <- list(
 set.seed(123)
 beta.est.n <- beta.sd.n <- disp.est.n <- beta.COV.n <- beta.SqErr.n <- disp.SqErr.n <- c()
 beta.est <- beta.sd <- disp.est <- beta.COV <- beta.SqErr<- disp.SqErr <- c()
-dat <- NULL
+dat <- NULL 
+## generate CD4
+ai_cd <- rep(rnorm(n=n, sd=0.4), each=ni)
+error_cd <- rnorm(N, sd=0.2)
+cd4 <- 5.2+1.6*day-1.2*day^2+ai_cd+error_cd
+
+
 for(k in 1:rep){
   cat("This is run", k, "\n")
   
@@ -86,10 +93,7 @@ for(k in 1:rep){
   
   while(class(nlme.fit)=="try-error" | convg==FALSE|class(Rnlme.fit)=="try-error"){
     ##########################  simulate data set
-    ## generate CD4
-    ai_cd <- rep(rnorm(n=n, sd=0.4), each=ni)
-    error_cd <- rnorm(N, sd=0.2)
-    cd4 <- 5.2+1.6*day-1.2*day^2+ai_cd+error_cd
+
     
     ## generate random effects
     temp <- rchisq(n, df=ndf)
@@ -179,6 +183,7 @@ for(k in 1:rep){
   beta.lower <- Rnlme.fit$fixedest-1.96*Rnlme.fit$fixedSD
   beta.upper <- Rnlme.fit$fixedest+1.96*Rnlme.fit$fixedSD
   beta.cover <- (beta.lower<=beta) & (beta<=beta.upper)
+  cat("\n", beta.cover, "\n")
   
   beta.est <- rbind(beta.est, Rnlme.fit$fixedest)
   beta.sd <- rbind(beta.sd, Rnlme.fit$fixedSD)

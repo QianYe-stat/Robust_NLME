@@ -4,7 +4,7 @@
 
 
 Rnlme <- function(nlmeObject, long.data, idVar, 
-                  itertol=1e-3, Ptol=1e-2, iterMax=20, Verbose=FALSE){
+                  itertol=1e-3, Ptol=2e-2, iterMax=20, Verbose=FALSE){
   #set.seed(123)
   ##################################### settings for nlme model 
   nlmeReturn <- get_nlme_loglike(nlmeObject)
@@ -49,7 +49,7 @@ Rnlme <- function(nlmeObject, long.data, idVar,
   convergence <- 1
   M <- 1
   
-  while(!(likDiff <= itertol | (Diff <= Ptol & Diff0 <= Ptol) | M > iterMax)) {
+  while(!(likDiff <= itertol | (Diff <= Ptol & Diff0 <= Ptol ) | M > iterMax)) {
     #################################### estimation
     Diff0 <- Diff
     cat("############## Iteration:", M, "###############","\n")
@@ -135,18 +135,34 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     message("Successful convergence. Iteration stops because likDiff <= itertol.")
     convergence <- 0
   }
-  if(Diff <= Ptol & Diff0 <= Ptol){
-    message("Successful convergence. Iteration stops because FixedParDiff <= Ptol in two consective iteration.")
-    convergence <- 0
-  }
+   if(Diff <= Ptol & Diff0 <= Ptol){
+     message("Successful convergence. Iteration stops because FixedParDiff <= Ptol in two consective iteration.")
+     convergence <- 0
+   }
   
   cat("Start estimating SD for fixed parameters ...\n ...\n")
   
   # estimate sd's of parameter estimates  
   sd_output <- get_sd(RespLog=Jloglike, long.data,  
-                      fixedest0, dispest0, invSIGMA0,
+                      fixedest0, dispest0, invSIGMA0=solve(Mat),
                       Bi, B, q_split,
                       Jfixed, Jraneff)
+  long.data<- simdat
+  fixedest0 <- Rnlme.fit$fixedest
+  dispest0 <- Rnlme.fit$dispersion
+  Bi <- Rnlme.fit$Bi
+  B <- Rnlme.fit$B
+  q_split <- c(3,1,1)
+  
+  get_sd(RespLog=Jloglike, long.data,  
+         fixedest0, dispest0, invSIGMA0=solve(Mat),
+         Bi, B, q_split,
+         Jfixed, Jraneff)
+  get_sd(RespLog=Jloglike, long.data,  
+         fixedest0, dispest0=list(d1=d[1],d2=d[2],d3=d[3], alpha0=alpha0, alpha1=alpha1), 
+         invSIGMA0=Rnlme.fit$invSIGMA,
+         Bi, B, q_split,
+         Jfixed, Jraneff)
   
   cat("done.\n")
   
@@ -157,8 +173,9 @@ Rnlme <- function(nlmeObject, long.data, idVar,
   list(fixedest = fixedest0,
        fixedSD = sd_output,
        Bi = Bi, 
-       #B = B,
-       SIGMA = solve(invSIGMA0), 
+       B = B,
+       SIGMA = solve(invSIGMA0),
+       invSIGMA=invSIGMA0,
        dispersion = dispest0,
        convergence = convergence==0,
        loglike_value = loglike_value0,
