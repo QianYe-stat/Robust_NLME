@@ -150,10 +150,11 @@ Rnlme <- function(nlmeObject, long.data, idVar,
   
   # estimate sd's of parameter estimates  
   sd_output <- get_sd2(RespLog=Jloglike, long.data,  idVar,
-                      fixedest0, dispest0, invSIGMA0, SIGMA,
+                      fixedest0, dispest0, invSIGMA0, SIGMA0,
                       Bi, B, q_split,
                       Jfixed,Jraneff)
-   
+  
+
  
   cat("done.\n")
   
