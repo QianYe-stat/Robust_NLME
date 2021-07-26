@@ -8,7 +8,7 @@ get_sd2 <- function(RespLog, long.data, idVar,
   
   
   dhat <- dispest0[c(1,2,3)]
-  Shat <- diag(dhat)%*%SIGMA0%*%diag(dhat)
+  Dhat <- diag(dhat)%*%SIGMA0%*%diag(dhat)
   Tmat <- diag(0, p, p)
   
   for(i in 1:n){
@@ -17,7 +17,7 @@ get_sd2 <- function(RespLog, long.data, idVar,
     qL <- nrow(subdat)
     
     X <- Z <- as.matrix(cbind(rep(1, qL),subdat$day, subdat$cd4))
-    Di <- Z %*% Shat %*% t(Z)+diag(dispest0[4]^2, qL,qL)
+    Di <- Z %*% Dhat %*% t(Z)+diag(dispest0[4]^2, qL,qL)
     
     Tmat <- Tmat + t(X) %*% solve(Di) %*% X
     
