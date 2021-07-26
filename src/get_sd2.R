@@ -8,7 +8,7 @@ get_sd2 <- function(RespLog, long.data, idVar,
   
   
   dhat <- dispest0[c(1,2,3)]
-  Shat <- diag(dhat)%*%SIGMA%*%diag(dhat)
+  Shat <- diag(dhat)%*%SIGMA0%*%diag(dhat)
   Tmat <- diag(0, p, p)
   
   for(i in 1:n){
