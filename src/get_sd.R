@@ -1,5 +1,5 @@
-get_sd <- function(RespLog, long.data,
-                   fixedest0, dispest0, invSIGMA0,
+get_sd <- function(RespLog, long.data, idVar,
+                   fixedest0, dispest0, invSIGMA0,SIGMA0,
                    Bi, B, q_split,
                    Jfixed, Jraneff){
   
