@@ -10,25 +10,26 @@ library(tibble)
 library(ggpubr)
 rm(list=ls())
 rep <- 10
-n <- 50
+n <- 100
 ni <- 10
 N <- n*ni
 ti <- seq(0, 1, length.out=ni)
 
 patid <- rep(1:n, each=ni)
 day <- rep(ti, n)
+
 uniqueID <- seq(1:n)   
-
-beta <- c(3.4, 1.9, 15.7)
-d <- c(0.6, 0.4, 0.9)
-#d <- c(0.6, 0.4, 0.9)*5
-Mat <- matrix(c(1,0.2, 0.2, 0.2, 1, 0.2, 0.2, 0.2, 1), ncol=3)
-
+d <- c(0.42, 0.13, 0.14)
+sigma <- 0.2
+Mat <- matrix(c(1,0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1), ncol=3)
+beta <- c(6.0, -2.5, -0.7)
 alpha0 <- log(0.02)
-alpha1 <-  5.2
-ndf <- 5
-nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
-fit.df <- 5
+alpha1 <-  3.4
+ndf <- 3
+nf <- function(p1,p2,p3, t, cd) p1+p2*t+p3*cd 
+fit.df <- 3
+
+
 
 ########################## source all functions  
 (file.sources = list.files(path=here::here("src"),pattern="*.R$"))
@@ -37,25 +38,17 @@ sapply(file.sources,source)
 
 
 ########################## model specification
-# residual dispersion model:  
-ndf <- 5
 sigmaObject1 <- list(
-  model=~1+day+(1|patid),
-  link='log',
-  ran.dist="inverse-Chi",
-  df=fit.df,
-  str.val=c(alpha0,alpha1),
-  lower=NULL,
-  upper=NULL
+  model=NULL,
+  str.val=sigma
 )
 
-# mean structure model:  
-nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
 
+# mean structure model:  
 nlmeObject1 <- list(
-  nf = function(p1,p2,p3,t) p1+p2*exp(-p3*t),
-  model= lgcopy ~ nf(p1,p2,p3,day),
-  var=c("day"),
+  nf = function(p1,p2,p3, t, cd) p1+p2*t+p3*cd ,
+  model= lgcopy ~ nf(p1,p2,p3, day, cd4),
+  var=c("day", "cd4"),
   fixed = p1+p2+p3 ~1,
   random = p1+p2+p3 ~1,
   family='normal', 
@@ -65,17 +58,24 @@ nlmeObject1 <- list(
   str.fixed=beta,  # starting value for fixed effect
   str.disp=d,  # starting value for fixed dispersion of random eff
   lower.fixed=NULL, # lower bounds for fixed eff
-  upper.fixed=NULL, # upper bounds for fixed eff
+  upper.fixed=rep(100,3), # upper bounds for fixed eff
   lower.disp=c(0,0,0), # lower bounds for fixed dispersion of random eff
   upper.disp=c(Inf,Inf,Inf) # upper bounds for  fixed dispersion of random eff
 )
 
 
-
 set.seed(123)
+
 beta.est.n <- beta.sd.n <- disp.est.n <- beta.COV.n <- beta.SqErr.n <- disp.SqErr.n <- c()
 beta.est <- beta.sd <- disp.est <- beta.COV <- beta.SqErr<- disp.SqErr <- c()
-dat <- NULL
+dat <- NULL 
+
+## generate CD4
+ai_cd <- rep(rnorm(n=n, sd=0.4), each=ni)
+error_cd <- rnorm(N, sd=0.2)
+cd4 <- 5.2+1.6*day-1.2*day^2+ai_cd+error_cd
+
+
 for(k in 1:rep){
   cat("This is run", k, "\n")
   
@@ -86,39 +86,35 @@ for(k in 1:rep){
   while(class(nlme.fit)=="try-error" | convg==FALSE|class(Rnlme.fit)=="try-error"){
     ##########################  simulate data set
     
-    ## generate random effects
-    temp <- rchisq(n, df=ndf)
-    a0 <- log(ndf/temp) 
-    
     D <- diag(d) %*% Mat %*% diag(d)
     u <- rmvnorm(n, sigma=D)
-
+    
     simdat <- c()
     ## data set
     for(i in 1:n){
-      a0i <- a0[i]
       ui <- u[i,]
       
-      sdi <- sqrt(exp(alpha0+alpha1*ti+a0i))
-      errori <- rnorm(ni, sd=sdi)
+      indexi <- patid==uniqueID[i]
+      cdi <- cd4[indexi]
       
-
-      parami <- cbind(matrix(rep(beta+ui, ni), byrow=TRUE, ncol=length(beta)), ti)
+      errori <- rnorm(ni, sd=sigma)
       
-      outi <- apply(parami, 1, FUN=function(t){nf(t[1], t[2], t[3], t[4])})
+      parami <- cbind(matrix(rep(beta+ui, ni), byrow=TRUE, ncol=3), ti, cdi)
       
-      dati <- data.frame(patid=uniqueID[i], day=ti, lgcopy=outi+errori)
+      outi <- apply(parami, 1, FUN=function(t){nf(t[1], t[2], t[3], t[4], t[5])})
+      
+      dati <- data.frame(patid=uniqueID[i], day=ti, cd4=cdi, lgcopy=outi+errori)
       
       simdat <- rbind(simdat, dati)
     }
     
     simdat <- simdat %>% arrange(patid, day)
-   # dat[[k]] <- simdat
+    #dat[[k]] <- simdat
     
     ########################## run nlme model
     simdat1 <- groupedData(lgcopy~day|patid, data=simdat)
-    nf = function(p1,p2,p3,t) p1+p2*exp(-p3*t)
-    nlme.fit <- try(nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1+p2+p3 ~1,
+    nf <-  function(p1,p2,p3, t, cd) p1+p2*t+p3*cd 
+    nlme.fit <- try(nlme(lgcopy~nf(p1,p2,p3, day, cd4),fixed = p1+p2+p3 ~1,random = p1+p2+p3 ~1,
                          data =simdat1,start=c(beta)))
     
     if(class(nlme.fit)!="try-error") {
@@ -143,10 +139,10 @@ for(k in 1:rep){
   
   disp.nlme <- as.numeric(VarCorr(nlme.fit)[,"StdDev"])
   names(disp.nlme) <- names(VarCorr(nlme.fit)[,"StdDev"])
-  sigma.ind <- names(disp.nlme)=="Residual"
-  disp.nlme[sigma.ind] <- (disp.nlme[sigma.ind])^2
+ # sigma.ind <- names(disp.nlme)=="Residual"
+ #  disp.nlme[sigma.ind] <- (disp.nlme[sigma.ind])^2
   
-  disp.SqErr.nlme <- (disp.nlme-c(d,exp(alpha0)))^2
+  disp.SqErr.nlme <- (disp.nlme-c(d,sigma))^2
   
   
   beta.est.n <- rbind(beta.est.n, beta.nlme)
@@ -158,12 +154,13 @@ for(k in 1:rep){
   disp.est.n <- rbind(disp.est.n, disp.nlme)
   disp.SqErr.n <- rbind(disp.SqErr.n, disp.SqErr.nlme)
   ################ output from Rnlme function
-  alpha0.ind <- names(Rnlme.fit$dispersion)=="alpha0"
-  Rnlme.fit$dispersion[alpha0.ind] <- exp(Rnlme.fit$dispersion[alpha0.ind])
+ # alpha0.ind <- names(Rnlme.fit$dispersion)=="alpha0"
+#  Rnlme.fit$dispersion[alpha0.ind] <- exp(Rnlme.fit$dispersion[alpha0.ind])
   
   beta.lower <- Rnlme.fit$fixedest-1.96*Rnlme.fit$fixedSD
   beta.upper <- Rnlme.fit$fixedest+1.96*Rnlme.fit$fixedSD
   beta.cover <- (beta.lower<=beta) & (beta<=beta.upper)
+  cat("\n", beta.cover, "\n")
   
   beta.est <- rbind(beta.est, Rnlme.fit$fixedest)
   beta.sd <- rbind(beta.sd, Rnlme.fit$fixedSD)
@@ -171,7 +168,7 @@ for(k in 1:rep){
   beta.COV <- rbind(beta.COV, beta.cover)
   
   disp.est <- rbind(disp.est, Rnlme.fit$dispersion)
-  disp.SqErr <- rbind(disp.SqErr, (Rnlme.fit$dispersion-c(d,exp(alpha0), alpha1))^2)
+  disp.SqErr <- rbind(disp.SqErr, (Rnlme.fit$dispersion-c(d,sigma))^2)
   
 }
 output.nlme <- list(fixed=beta.est.n, sd=beta.sd.n, sqErr=beta.SqErr.n,
@@ -181,6 +178,3 @@ output.Rnlme <- list(fixed=beta.est, sd=beta.sd, sqErr=beta.SqErr,
 
 (sum.nlme <- get_summary(output.nlme, type='nlme'))
 (sum.Rnlme <- get_summary(output.Rnlme, type="Rnlme"))
-
-saveRDS(sum.nlme, here::here("data", "Ex1_nlmeRes_n50_ni6_rep100.rds"))
-saveRDS(sum.Rnlme, here::here("data", "Ex1_RnlmeRes_n50_ni6_rep100.rds"))

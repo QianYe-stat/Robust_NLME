@@ -12,6 +12,7 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
   ran.loglike <- str_replace_all(RespLog$ran.loglike, "invSIGMA", paste0("solve(",Lmat$M, ")"))
   
   Yrandisp <- !is.null(RespLog$randisp.loglike)
+  Ysigma <- !is.null(RespLog$sigma.loglike)
   
   Jdisp_new <- c(Jdisp, Lmat$Mpar)
   
@@ -26,7 +27,10 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
     
     # evaluate the h-likelihood
     mu.val <- with(long.data, with(par.val, with(B, eval(parse(text=RespLog$mu.loglike)))))
-    sigma.val <- with(par.val, with(Bi, eval(parse(text=RespLog$sigma.loglike))))
+    if(Ysigma){
+      sigma.val <- with(par.val, with(Bi, eval(parse(text=RespLog$sigma.loglike))))
+    } else sigma.val <- 0
+    
     if(Yrandisp) {
       randisp.val <- with(par.val, with(Bi, eval(parse(text=RespLog$randisp.loglike))))
     } else {
@@ -133,7 +137,7 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
     stop("Iteration stops because dispersion parameters can not be successfully estimated.")  
   }
   
-  return(list(disp=output, invSIGMA=invSIGMAest, Lval=Lval))
+  return(list(disp=output, invSIGMA=invSIGMAest, Lval=Lval, SIGMA=SIGMAest))
 }
 
 

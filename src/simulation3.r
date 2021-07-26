@@ -46,13 +46,6 @@ sigmaObject1 <- list(
   str.val=c(alpha0, alpha1) 
 )
 
-# random effect dispersion model
-ranCovObject1 <- list(
-  varying.disp=~p2,
-  ran.dist="inverse-Chi",
-  df=fit.df
-)
-
 
 # mean structure model:  
 nlmeObject1 <- list(
@@ -64,7 +57,7 @@ nlmeObject1 <- list(
   family='normal', 
   ran.dist='normal',
   sigma=sigmaObject1,    # residual dispersion model (include residual random eff)
-  ran.Cov=ranCovObject1,  # random effect dispersion model (include random random eff (double random eff))
+  ran.Cov=NULL,  # random effect dispersion model (include random random eff (double random eff))
   str.fixed=beta,  # starting value for fixed effect
   str.disp=d,  # starting value for fixed dispersion of random eff
   lower.fixed=NULL, # lower bounds for fixed eff
@@ -74,14 +67,11 @@ nlmeObject1 <- list(
 )
 
 set.seed(123)
-# ## generate CD4
-# ai_cd <- rep(rnorm(n=n, sd=0.4), each=ni)
-# error_cd <- rnorm(N, sd=0.2)
-# cd4 <- 5.2+1.6*day-1.2*day^2+ai_cd+error_cd
 
 beta.est.n <- beta.sd.n <- disp.est.n <- beta.COV.n <- beta.SqErr.n <- disp.SqErr.n <- c()
 beta.est <- beta.sd <- disp.est <- beta.COV <- beta.SqErr<- disp.SqErr <- c()
 dat <- NULL 
+
 ## generate CD4
 ai_cd <- rep(rnorm(n=n, sd=0.4), each=ni)
 error_cd <- rnorm(N, sd=0.2)
@@ -100,29 +90,24 @@ for(k in 1:rep){
     
     ## generate random effects
     temp <- rchisq(n, df=ndf)
-    a0 <- log(ndf/temp)
+    a0 <- log(ndf/temp) 
     
-    temp <- rchisq(n, df=ndf)
-    expb3 <- ndf/temp
+    D <- diag(d) %*% Mat %*% diag(d)
+    u <- rmvnorm(n, sigma=D)
     
     simdat <- c()
     ## data set
     for(i in 1:n){
       a0i <- a0[i]
-      expb3i <- expb3[i]
+      ui <- u[i,]
+      
       indexi <- patid==uniqueID[i]
       cdi <- cd4[indexi]
       
       sdi <- sqrt(exp(alpha0+alpha1*ti+a0i))
       errori <- rnorm(ni, sd=sdi)
       
-      di <- d*c(1,sqrt(expb3i),1)
-      
-      Di <- diag(di) %*% Mat %*% diag(di)
-      
-      ui <- rmvnorm(1, sigma=Di)
-    
-      
+  
       parami <- cbind(matrix(rep(beta+ui, ni), byrow=TRUE, ncol=3), ti, cdi)
       
       outi <- apply(parami, 1, FUN=function(t){nf(t[1], t[2], t[3], t[4], t[5])})

@@ -3,6 +3,7 @@ est_individual_raneff <- function(RespLog, data, raneff,
                                   Verbose=TRUE) {
   
   Yrandisp <- !is.null(RespLog$randisp.loglike)
+  Ysigma <- !is.null(RespLog$sigma.loglike)
   
   # ff() returns the value of h-likelihood
   ff <- function(xx){  
@@ -17,7 +18,9 @@ est_individual_raneff <- function(RespLog, data, raneff,
     mu.val <- with(par.val, with(data, eval(parse(text=RespLog$mu.loglike))))
     
     # values from residual dispersion model
-    sigma.val <- with(par.val, eval(parse(text=RespLog$sigma.loglike)))
+    if(Ysigma) {
+      sigma.val <- with(par.val, eval(parse(text=RespLog$sigma.loglike)))
+    } else sigma.val <- 0
     
     # values from random eff dispersion model
     if(Yrandisp) {
@@ -35,7 +38,7 @@ est_individual_raneff <- function(RespLog, data, raneff,
   k <-  length(raneff)
   
   gr.mu <- Deriv(RespLog$mu.loglike, raneff)
-  gr.sigma <- Deriv(RespLog$sigma.loglike, raneff)
+  if(Ysigma) gr.sigma <- Deriv(RespLog$sigma.loglike, raneff)
   if(Yrandisp) {gr.randisp <- Deriv(RespLog$randisp.loglike, raneff)}
   gr.ran <- Deriv(RespLog$ran.loglike, raneff)
   
@@ -54,7 +57,10 @@ est_individual_raneff <- function(RespLog, data, raneff,
     val <- matrix(val, ncol=k, byrow=FALSE)
     gr.mu.val <- as.vector(apply(val, 2, sum))
     
-    gr.sigma.val <- as.vector(with(par.val, eval(parse(text=gr.sigma))))
+    if(Ysigma) {
+      gr.sigma.val <- as.vector(with(par.val, eval(parse(text=gr.sigma))))
+    } else gr.sigma.val <- rep(0,k)
+      
     if(Yrandisp) {
       gr.randisp.val <- as.vector(with(par.val, eval(parse(text=gr.randisp))))
     } else {

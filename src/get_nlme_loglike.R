@@ -1,6 +1,17 @@
 get_nlme_loglike <- function(nlmeObject){
   
   ############## Return from get_info_sigma #####################
+  if(is.null(nlmeObject$sigma$model)){
+    sigma.raneff <- NULL  # random effect in residual dispersion (residual random effects)
+    sigma.fixed <- "sigma"
+    sigma.loglike <- NULL
+    sigma.str <- nlmeObject$sigma$str.val
+    sigma.lower <- nlmeObject$sigma$lower
+    sigma.upper <- nlmeObject$sigma$upper
+    sigma.df <- NULL
+    sigmaExpr <- "(sigma^2)"
+    
+  } else {
   sigmaInfo <- get_info_sigma(nlmeObject$sigma)
   sigma.raneff <- sigmaInfo$raneff  # random effect in residual dispersion (residual random effects)
   sigma.fixed <- sigmaInfo$fixed
@@ -9,6 +20,8 @@ get_nlme_loglike <- function(nlmeObject){
   sigma.lower <- sigmaInfo$lower
   sigma.upper <- sigmaInfo$upper
   sigma.df <- sigmaInfo$df
+  sigmaExpr <- sigmaInfo$sigmaExpr
+  }
   
   ranCovObject <- nlmeObject$ran.Cov
   ##################
@@ -82,7 +95,7 @@ get_nlme_loglike <- function(nlmeObject){
   
   if (nlmeObject$family=="normal"){ 
     
-    sigma <- sigmaInfo$sigmaExpr
+    sigma <-  sigmaExpr
     mu.loglike <- paste0("-0.5*(", resp, "-", mu, 
                       ")^2/",sigma, "-0.5*log(",sigma,")-0.5*log(2*pi)")
     

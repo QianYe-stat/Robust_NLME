@@ -17,3 +17,5 @@ get_Hessian <- function(loglik, pars){
   
   return(result)
 }  
+
+

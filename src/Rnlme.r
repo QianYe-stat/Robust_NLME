@@ -67,7 +67,7 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     
     # estimate fixed parameters
     cat("Start estimating fixed parameters ... \n")
-    fixed.output <- est_fixed(RespLog=Jloglike, long.data, Jfixed,
+    fixed.output <- est_fixed(RespLog=Jloglike, long.data,Jfixed,
                               fixedest0, dispest0, invSIGMA0,
                               Bi, B, 
                               lower=lower.fixed, upper=upper.fixed,
@@ -86,6 +86,7 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     
     dispest <- disp.output$disp
     invSIGMA <- disp.output$invSIGMA
+    SIGMA <- disp.output$SIGMA
     Lval <- disp.output$Lval
     
     cat("done.\n")
@@ -118,11 +119,13 @@ Rnlme <- function(nlmeObject, long.data, idVar,
       cat("dispersion.par:", round(unlist(dispest), 2), "\n")
     }
     cat("loglike:", loglike_value, "\n")
+    cat("SIGMA:", as.matrix(SIGMA), "\n")
     cat("##########################################","\n")
     
     fixedest0 <- fixedest
     dispest0 <- dispest
     invSIGMA0 <- invSIGMA
+    SIGMA0 <- SIGMA
     Lval0 <- Lval
     loglike_value0 <- loglike_value
     
@@ -146,11 +149,12 @@ Rnlme <- function(nlmeObject, long.data, idVar,
   cat("Start estimating SD for fixed parameters ...\n ...\n")
   
   # estimate sd's of parameter estimates  
-  sd_output <- get_sd(RespLog=Jloglike, long.data,  
-                      fixedest0, dispest0, invSIGMA0,
+  sd_output <- get_sd2(RespLog=Jloglike, long.data,  idVar,
+                      fixedest0, dispest0, invSIGMA0, SIGMA,
                       Bi, B, q_split,
-                      Jfixed, Jraneff)
-  
+                      Jfixed,Jraneff)
+   
+ 
   cat("done.\n")
   
   #### AIC
