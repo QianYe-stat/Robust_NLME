@@ -3,7 +3,7 @@
 #' @param idVar
 
 
-Rnlme <- function(nlmeObject, long.data, idVar, 
+Rnlme1 <- function(nlmeObject, long.data, idVar, 
                   itertol=1e-3, Ptol=1e-2, iterMax=20, Verbose=FALSE){
   #set.seed(123)
   ##################################### settings for nlme model 
