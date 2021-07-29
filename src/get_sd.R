@@ -24,6 +24,7 @@ get_sd <- function(RespLog, long.data, idVar,
   
   
   mu.val <- get_Hvalue(Hmat.mu, p+q, long.data, par.val, B)
+  
   if(Ysigma){
     sigma.val <- get_Hvalue(Hmat.sigma, p+q, data=NULL, par.val, Bi)
   } else sigma.val <- diag(0, p+q, p+q)
@@ -32,7 +33,7 @@ get_sd <- function(RespLog, long.data, idVar,
     randisp.val <- get_Hvalue(Hmat.randisp, p+q, data=NULL, par.val, Bi)
   } else randisp.val <- diag(0, p+q, p+q)
   
-  ran.val <- bdiag(diag(0, p), -invSIGMA0*(n), diag(0, (q-q1)))
+  ran.val <- bdiag(diag(0, p,p), -invSIGMA0*(n), diag(0, (q-q1),(q-q1)))
   
   
   Hval <-  as.matrix(-(mu.val+sigma.val+randisp.val+ran.val))
