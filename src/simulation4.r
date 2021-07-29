@@ -8,10 +8,11 @@ library(MASS)
 library(mvtnorm)
 library(tibble)
 library(ggpubr)
+library(Matrix)
 rm(list=ls())
-rep <- 10
+rep <- 100
 n <- 100
-ni <- 10
+ni <- 15
 N <- n*ni
 ti <- seq(0, 1, length.out=ni)
 
@@ -40,7 +41,9 @@ sapply(file.sources,source)
 ########################## model specification
 sigmaObject1 <- list(
   model=NULL,
-  str.val=sigma
+  str.val=sigma,
+  lower=0,
+  upper=Inf
 )
 
 
@@ -63,18 +66,21 @@ nlmeObject1 <- list(
   upper.disp=c(Inf,Inf,Inf) # upper bounds for  fixed dispersion of random eff
 )
 
-
+get_nlme_loglike(nlmeObject1)
 set.seed(123)
 
 beta.est.n <- beta.sd.n <- disp.est.n <- beta.COV.n <- beta.SqErr.n <- disp.SqErr.n <- c()
 beta.est <- beta.sd <- disp.est <- beta.COV <- beta.SqErr<- disp.SqErr <- c()
+beta.sd1 <- beta.sd2 <- beta.sd3 <- beta.sd4 <- c()
+beta.COV1 <- beta.COV2 <- beta.COV3 <- beta.COV4 <- c()
 dat <- NULL 
 
 ## generate CD4
-ai_cd <- rep(rnorm(n=n, sd=0.4), each=ni)
-error_cd <- rnorm(N, sd=0.2)
-cd4 <- 5.2+1.6*day-1.2*day^2+ai_cd+error_cd
+#ai_cd <- rep(rnorm(n=n, sd=0.4), each=ni)
+#error_cd <- rnorm(N, sd=0.2)
+#cd4 <- 5.2+1.6*day-1.2*day^2+ai_cd+error_cd
 
+cd4 <- rnorm(N, mean=5.6, sd=0.5)
 
 for(k in 1:rep){
   cat("This is run", k, "\n")
@@ -88,6 +94,7 @@ for(k in 1:rep){
     
     D <- diag(d) %*% Mat %*% diag(d)
     u <- rmvnorm(n, sigma=D)
+    error <- rnorm(N, sd=sigma)
     
     simdat <- c()
     ## data set
@@ -96,10 +103,9 @@ for(k in 1:rep){
       
       indexi <- patid==uniqueID[i]
       cdi <- cd4[indexi]
+      errori <- error[indexi]
       
-      errori <- rnorm(ni, sd=sigma)
-      
-      parami <- cbind(matrix(rep(beta+ui, ni), byrow=TRUE, ncol=3), ti, cdi)
+      parami <- cbind(matrix(rep((beta+ui), ni), byrow=TRUE, ncol=3), ti, cdi)
       
       outi <- apply(parami, 1, FUN=function(t){nf(t[1], t[2], t[3], t[4], t[5])})
       
@@ -119,7 +125,7 @@ for(k in 1:rep){
     
     if(class(nlme.fit)!="try-error") {
       ########################## run Robust nlme model
-      Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject1, long.data=simdat, idVar="patid"))
+      Rnlme.fit <- try(Rnlme1(nlmeObject=nlmeObject1, long.data=simdat, idVar="patid"))
       if(class(Rnlme.fit)!="try-error") convg <- Rnlme.fit$convergence
     }
   }
@@ -157,24 +163,58 @@ for(k in 1:rep){
  # alpha0.ind <- names(Rnlme.fit$dispersion)=="alpha0"
 #  Rnlme.fit$dispersion[alpha0.ind] <- exp(Rnlme.fit$dispersion[alpha0.ind])
   
-  beta.lower <- Rnlme.fit$fixedest-1.96*Rnlme.fit$fixedSD
-  beta.upper <- Rnlme.fit$fixedest+1.96*Rnlme.fit$fixedSD
-  beta.cover <- (beta.lower<=beta) & (beta<=beta.upper)
-  cat("\n", beta.cover, "\n")
+  get_cov <- function(par,est,sd){
+    lower <-  est-1.96*sd
+    upper <-  est+1.96*sd
+    cover <- (lower<=par) & (par<=upper)
+  }
+  
+  #beta.lower <- Rnlme.fit$fixedest-1.96*Rnlme.fit$fixedSD
+  #beta.upper <- Rnlme.fit$fixedest+1.96*Rnlme.fit$fixedSD
+  #beta.cover <- (beta.lower<=beta) & (beta<=beta.upper)
+  
+  beta.cover1 <- get_cov(beta, Rnlme.fit$fixedest, Rnlme.fit$fixedSD1)
+  beta.cover2 <- get_cov(beta, Rnlme.fit$fixedest, Rnlme.fit$fixedSD2)
+  beta.cover3 <- get_cov(beta, Rnlme.fit$fixedest, Rnlme.fit$fixedSD3)
+  beta.cover4 <- get_cov(beta, Rnlme.fit$fixedest, Rnlme.fit$fixedSD4)
+  #cat("\n", beta.cover, "\n")
   
   beta.est <- rbind(beta.est, Rnlme.fit$fixedest)
-  beta.sd <- rbind(beta.sd, Rnlme.fit$fixedSD)
-  beta.SqErr <- rbind(beta.SqErr, (Rnlme.fit$fixedest-beta)^2)
-  beta.COV <- rbind(beta.COV, beta.cover)
+  beta.sd1 <- rbind(beta.sd1, Rnlme.fit$fixedSD1)
+  beta.sd2 <- rbind(beta.sd2, Rnlme.fit$fixedSD2)
+  beta.sd3 <- rbind(beta.sd3, Rnlme.fit$fixedSD3)
+  beta.sd4 <- rbind(beta.sd4, Rnlme.fit$fixedSD4)
+  #beta.SqErr <- rbind(beta.SqErr, (Rnlme.fit$fixedest-beta)^2)
+  beta.COV1 <- rbind(beta.COV1, beta.cover1)
+  beta.COV2 <- rbind(beta.COV2, beta.cover2)
+  beta.COV3 <- rbind(beta.COV3, beta.cover3)
+  beta.COV4 <- rbind(beta.COV4, beta.cover4)
   
   disp.est <- rbind(disp.est, Rnlme.fit$dispersion)
   disp.SqErr <- rbind(disp.SqErr, (Rnlme.fit$dispersion-c(d,sigma))^2)
   
 }
-output.nlme <- list(fixed=beta.est.n, sd=beta.sd.n, sqErr=beta.SqErr.n,
-                    coverage=beta.COV.n, dispersion=disp.est.n, dispersion.SqErr=disp.SqErr.n)
-output.Rnlme <- list(fixed=beta.est, sd=beta.sd, sqErr=beta.SqErr,
-                     coverage=beta.COV, dispersion=disp.est, dispersion.SqErr=disp.SqErr)
+#output.nlme <- list(fixed=beta.est.n, sd=beta.sd.n, sqErr=beta.SqErr.n,
+#                    coverage=beta.COV.n, dispersion=disp.est.n, dispersion.SqErr=disp.SqErr.n)
+
+output.nlme <- list(fixed=beta.est.n, sd=beta.sd.n,
+                    coverage=beta.COV.n, dispersion=disp.est.n )
+#output.Rnlme <- list(fixed=beta.est, sd=beta.sd, sqErr=beta.SqErr,
+ #                    coverage=beta.COV, dispersion=disp.est, dispersion.SqErr=disp.SqErr)
+
+output.Rnlme <- list(fixed=beta.est, 
+                     sd_TH=beta.sd1, coverage_TH=beta.COV1,
+                     sd_TH_est=beta.sd2, coverage_TH_est=beta.COV2,
+                     sd_HL=beta.sd3, coverage_HL=beta.COV3,
+                     sd_HL_est=beta.sd4, coverage_HL_est=beta.COV4,
+                     dispersion=disp.est)
+map(output.nlme, function(t){apply(t,2,mean)})
+map(output.Rnlme, function(t){apply(t,2,mean)})
+saveRDS(map(output.nlme, function(t){apply(t,2,mean)}),  here::here("data", "nlmeCompare_n100_ni15_rep100.rds"))
+saveRDS(map(output.Rnlme, function(t){apply(t,2,mean)}), here::here("data", "RnlmeCompare_n100_ni15_rep100.rds"))
 
 (sum.nlme <- get_summary(output.nlme, type='nlme'))
 (sum.Rnlme <- get_summary(output.Rnlme, type="Rnlme"))
+
+saveRDS(sum.nlme, here::here("data", "nlmeRes_n=500"))
+saveRDS(sum.Rnlme, here::here("data", "RnlmeRes_n100_linear.rds"))
