@@ -155,8 +155,6 @@ Rnlme <- function(nlmeObject, long.data, idVar,
                              Jfixed,Jraneff)
   
   
-  
-  
   cat("done.\n")
   
   #### AIC

@@ -9,9 +9,9 @@ library(mvtnorm)
 library(tibble)
 library(ggpubr)
 rm(list=ls())
-rep <- 10
-n <- 50
-ni <- 10
+rep <- 200
+n <- 100
+ni <- 15
 N <- n*ni
 ti <- seq(0, 1, length.out=ni)
 
@@ -20,9 +20,8 @@ day <- rep(ti, n)
 uniqueID <- seq(1:n)   
 
 beta <- c(3.4, 1.9, 15.7)
-d <- c(0.6, 0.4, 0.9)
-#d <- c(0.6, 0.4, 0.9)*5
-Mat <- matrix(c(1,0.2, 0.2, 0.2, 1, 0.2, 0.2, 0.2, 1), ncol=3)
+d <- c(0.6, 0.4, 2)
+Mat <- matrix(c(1,0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1), ncol=3)
 
 alpha0 <- log(0.02)
 alpha1 <-  5.2
@@ -179,8 +178,42 @@ output.nlme <- list(fixed=beta.est.n, sd=beta.sd.n, sqErr=beta.SqErr.n,
 output.Rnlme <- list(fixed=beta.est, sd=beta.sd, sqErr=beta.SqErr,
                      coverage=beta.COV, dispersion=disp.est, dispersion.SqErr=disp.SqErr)
 
+get_summary <- function(output.model, type){
+  sd.out <- output.model$sd
+  fix.out <- output.model$fixed
+  
+  na.index1 <- apply(sd.out,1,FUN=function(t){any(is.na(t))|any(t<0.001)})
+  na.index2 <- apply(fix.out,1,FUN=function(t){any(t>=25)})
+  
+  na.index <- na.index1|na.index2
+  
+  cat("drop", sum(na.index), "invalid results")
+  
+  EST <- apply(output.model$fixed[!na.index,],2,mean)
+  BIAS <- abs(EST-beta)
+  SE.em <- apply(output.model$fixed[!na.index,],2,sd)
+  SE <- apply(output.model$sd[!na.index,],2,FUN = function(t){sqrt(mean(t^2))})
+  MSE <- apply(output.model$sqErr[!na.index,], 2, mean)
+  Coverage <- apply(output.model$coverage[!na.index,],2,mean)
+  
+  
+  EST.disp <- apply(output.model$dispersion[!na.index,], 2, mean)
+  if(type=="nlme")  BIAS.disp <- abs(EST.disp-c(d,exp(alpha0)))
+  if(type=="Rnlme") BIAS.disp <- abs(EST.disp-c(d,exp(alpha0), alpha1))
+  
+  SE.em.disp <- apply(output.model$dispersion[!na.index,], 2, sd)
+  MSE.disp <- apply(output.model$dispersion.SqErr[!na.index,] , 2, mean)
+  
+  sum.model <- list(fixed=cbind(EST, BIAS,SE.em, SE, MSE, Coverage), 
+                    dispersion=cbind(EST.disp, BIAS.disp, SE.em.disp, MSE.disp))
+}
+
+
 (sum.nlme <- get_summary(output.nlme, type='nlme'))
 (sum.Rnlme <- get_summary(output.Rnlme, type="Rnlme"))
 
-saveRDS(sum.nlme, here::here("data", "Ex1_nlmeRes_n50_ni6_rep100.rds"))
-saveRDS(sum.Rnlme, here::here("data", "Ex1_RnlmeRes_n50_ni6_rep100.rds"))
+saveRDS(sum.nlme, here::here("data", "Rob_NLME_nlmeRes.rds"))
+saveRDS(sum.Rnlme, here::here("data", "Rob_NLME_RnlmeRes.rds"))
+
+xtable(cbind(sum.Rnlme$fixed, sum.nlme$fixed), type = "latex",digits = 3)
+xtable(cbind(sum.Rnlme$dispersion, rbind(sum.nlme$dispersion,c(1,1,1,1))), type = "latex", digits = 3)

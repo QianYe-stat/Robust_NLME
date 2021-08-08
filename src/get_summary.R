@@ -18,8 +18,8 @@ get_summary <- function(output.model, type){
   
   
   EST.disp <- apply(output.model$dispersion[!na.index,], 2, mean)
-  if(type=="nlme")  BIAS.disp <- abs(EST.disp-c(d,sigma))
-  if(type=="Rnlme") BIAS.disp <- abs(EST.disp-c(d,sigma))
+  if(type=="nlme")  BIAS.disp <- abs(EST.disp-c(d,exp(alpha0)))
+  if(type=="Rnlme") BIAS.disp <- abs(EST.disp-c(d,exp(alpha0), alpha1))
   
   SE.em.disp <- apply(output.model$dispersion[!na.index,], 2, sd)
   MSE.disp <- apply(output.model$dispersion.SqErr[!na.index,] , 2, mean)

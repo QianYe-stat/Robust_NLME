@@ -21,7 +21,7 @@ day <- rep(ti, n)
 
 uniqueID <- seq(1:n)   
 d <- c(0.42, 0.13, 0.14)
-sigma <- 0.2
+#sigma <- 0.2
 Mat <- matrix(c(1,0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1), ncol=3)
 beta <- c(6.0, -2.5, -0.7)
 alpha0 <- log(0.02)
@@ -39,11 +39,20 @@ sapply(file.sources,source)
 
 
 ########################## model specification
+# sigmaObject1 <- list(
+#   model=NULL,
+#   str.val=sigma,
+#   lower=0,
+#   upper=Inf
+# )
+
+# residual dispersion model:  
 sigmaObject1 <- list(
-  model=NULL,
-  str.val=sigma,
-  lower=0,
-  upper=Inf
+  model=~1+day+(1|patid),
+  link='log',
+  ran.dist="inverse-Chi",
+  df=fit.df,
+  str.val=c(alpha0, alpha1) 
 )
 
 
@@ -92,18 +101,27 @@ for(k in 1:rep){
   while(class(nlme.fit)=="try-error" | convg==FALSE|class(Rnlme.fit)=="try-error"){
     ##########################  simulate data set
     
+    ## generate random effects
+    temp <- rchisq(n, df=ndf)
+    a0 <- log(ndf/temp) 
+    
     D <- diag(d) %*% Mat %*% diag(d)
     u <- rmvnorm(n, sigma=D)
-    error <- rnorm(N, sd=sigma)
+   # error <- rnorm(N, sd=sigma)
     
     simdat <- c()
     ## data set
     for(i in 1:n){
+      
+      a0i <- a0[i]
       ui <- u[i,]
       
       indexi <- patid==uniqueID[i]
       cdi <- cd4[indexi]
-      errori <- error[indexi]
+      #errori <- error[indexi]
+      
+      sdi <- sqrt(exp(alpha0+alpha1*ti+a0i))
+      errori <- rnorm(ni, sd=sdi)
       
       parami <- cbind(matrix(rep((beta+ui), ni), byrow=TRUE, ncol=3), ti, cdi)
       
@@ -145,10 +163,10 @@ for(k in 1:rep){
   
   disp.nlme <- as.numeric(VarCorr(nlme.fit)[,"StdDev"])
   names(disp.nlme) <- names(VarCorr(nlme.fit)[,"StdDev"])
- # sigma.ind <- names(disp.nlme)=="Residual"
- #  disp.nlme[sigma.ind] <- (disp.nlme[sigma.ind])^2
+  sigma.ind <- names(disp.nlme)=="Residual"
+  disp.nlme[sigma.ind] <- (disp.nlme[sigma.ind])^2
   
-  disp.SqErr.nlme <- (disp.nlme-c(d,sigma))^2
+  disp.SqErr.nlme <- (disp.nlme-c(d,exp(alpha0)))^2
   
   
   beta.est.n <- rbind(beta.est.n, beta.nlme)
@@ -160,8 +178,8 @@ for(k in 1:rep){
   disp.est.n <- rbind(disp.est.n, disp.nlme)
   disp.SqErr.n <- rbind(disp.SqErr.n, disp.SqErr.nlme)
   ################ output from Rnlme function
- # alpha0.ind <- names(Rnlme.fit$dispersion)=="alpha0"
-#  Rnlme.fit$dispersion[alpha0.ind] <- exp(Rnlme.fit$dispersion[alpha0.ind])
+  alpha0.ind <- names(Rnlme.fit$dispersion)=="alpha0"
+  Rnlme.fit$dispersion[alpha0.ind] <- exp(Rnlme.fit$dispersion[alpha0.ind])
   
   get_cov <- function(par,est,sd){
     lower <-  est-1.96*sd
@@ -191,7 +209,7 @@ for(k in 1:rep){
   beta.COV4 <- rbind(beta.COV4, beta.cover4)
   
   disp.est <- rbind(disp.est, Rnlme.fit$dispersion)
-  disp.SqErr <- rbind(disp.SqErr, (Rnlme.fit$dispersion-c(d,sigma))^2)
+  disp.SqErr <- rbind(disp.SqErr, (Rnlme.fit$dispersion-c(d,exp(alpha0),alpha1))^2)
   
 }
 #output.nlme <- list(fixed=beta.est.n, sd=beta.sd.n, sqErr=beta.SqErr.n,
@@ -203,15 +221,15 @@ output.nlme <- list(fixed=beta.est.n, sd=beta.sd.n,
  #                    coverage=beta.COV, dispersion=disp.est, dispersion.SqErr=disp.SqErr)
 
 output.Rnlme <- list(fixed=beta.est, 
-                     sd_TH=beta.sd1, coverage_TH=beta.COV1,
-                     sd_TH_est=beta.sd2, coverage_TH_est=beta.COV2,
-                     sd_HL=beta.sd3, coverage_HL=beta.COV3,
-                     sd_HL_est=beta.sd4, coverage_HL_est=beta.COV4,
+                     sd_TH_est=beta.sd1, coverage_TH_est=beta.COV1,
+                     sd_HL=beta.sd2, coverage_HL=beta.COV2,
+                     sd_HL_est=beta.sd3, coverage_HL_est=beta.COV3,
+                     sd_HL_est1=beta.sd4, coverage_HL_est1=beta.COV4,
                      dispersion=disp.est)
 map(output.nlme, function(t){apply(t,2,mean)})
 map(output.Rnlme, function(t){apply(t,2,mean)})
-saveRDS(map(output.nlme, function(t){apply(t,2,mean)}),  here::here("data", "nlmeCompare_n100_ni15_rep100.rds"))
-saveRDS(map(output.Rnlme, function(t){apply(t,2,mean)}), here::here("data", "RnlmeCompare_n100_ni15_rep100.rds"))
+saveRDS(map(output.nlme, function(t){apply(t,2,mean)}),  here::here("data", "nlmeCompare_n100_ni15_rep100_sigma.rds"))
+saveRDS(map(output.Rnlme, function(t){apply(t,2,mean)}), here::here("data", "RnlmeCompare_n100_ni15_rep100_sigma.rds"))
 
 (sum.nlme <- get_summary(output.nlme, type='nlme'))
 (sum.Rnlme <- get_summary(output.Rnlme, type="Rnlme"))

@@ -7,9 +7,12 @@ get_sd2 <- function(RespLog, long.data, idVar,
   p <- length(Jfixed)
   
   
-  dhat <- dispest0[c(1,2,3)]
+  dhat <- dispest0[c(1,2)]
   Dhat <- diag(dhat)%*%SIGMA0%*%diag(dhat)
   Tmat <- diag(0, p, p)
+  
+  al0 <- dispest0[3]
+  al1 <- dispest0[4]
   
   for(i in 1:n){
     subdat <- subset(long.data, long.data[, idVar]==uniqueID[i])
@@ -17,7 +20,10 @@ get_sd2 <- function(RespLog, long.data, idVar,
     qL <- nrow(subdat)
     
     X <- Z <- as.matrix(cbind(rep(1, qL),subdat$day, subdat$cd4))
-    Di <- Z %*% Dhat %*% t(Z)+diag(dispest0[4]^2, qL,qL)
+    
+    sigmai <- exp(al0+al1*subdat$day+Bi[i,3])
+    
+    Di <- Z %*% Dhat %*% t(Z)+diag(sigmai)
     
     Tmat <- Tmat + t(X) %*% solve(Di) %*% X
     

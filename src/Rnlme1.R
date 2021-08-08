@@ -149,12 +149,6 @@ Rnlme1 <- function(nlmeObject, long.data, idVar,
   cat("Start estimating SD for fixed parameters ...\n ...\n")
   
   # estimate sd's of parameter estimates  
-  sd_output_TH <-  get_sd2(RespLog=Jloglike, long.data,  idVar,
-                           fixedest0=beta, 
-                           dispest0=c(d,sigma), 
-                           invSIGMA0=solve(Mat), SIGMA0=Mat,
-                           Bi, B, q_split,
-                           Jfixed,Jraneff)
   
   sd_output_TH_est <- get_sd2(RespLog=Jloglike, long.data,  idVar,
                       fixedest0, dispest0, invSIGMA0, SIGMA0,
@@ -167,12 +161,16 @@ Rnlme1 <- function(nlmeObject, long.data, idVar,
           invSIGMA0=solve(Mat), SIGMA0=Mat,
           Bi, B, q_split,
           Jfixed,Jraneff)
+  
   sd_output_HL_est <- get_sd(RespLog=Jloglike, long.data,  idVar,
           fixedest0, dispest0, invSIGMA0, SIGMA0,
           Bi, B, q_split,
           Jfixed,Jraneff)
   
- 
+  sd_output_HL_est1 <- get_sd1(RespLog=Jloglike, long.data,  idVar,
+                             fixedest0, dispest0, invSIGMA0, SIGMA0,
+                             Bi, B, q_split,
+                             Jfixed,Jraneff)
 
  
   cat("done.\n")
@@ -182,10 +180,10 @@ Rnlme1 <- function(nlmeObject, long.data, idVar,
   BIC <- length(c(fixedest0, dispest0, Lval0))*log(nrow(B))-2*loglike_value0
   
   list(fixedest = fixedest0,
-       fixedSD1 = sd_output_TH,
-       fixedSD2 = sd_output_TH_est,
-       fixedSD3 = sd_output_HL,
-       fixedSD4 = sd_output_HL,
+       fixedSD1 = sd_output_TH_est,
+       fixedSD2 = sd_output_HL,
+       fixedSD3 = sd_output_HL_est,
+       fixedSD4 = sd_output_HL_est1,
        Bi = Bi, 
        #B = B,
        SIGMA = solve(invSIGMA0), 
