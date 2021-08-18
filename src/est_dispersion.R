@@ -51,6 +51,7 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
   k <- length(Jdisp_new)
   
   gr.mu <- Deriv(RespLog$mu.loglike, Jdisp)
+  
   gr.ran <- Deriv(ran.loglike, Jdisp_new)
   
   ############ gradient function
@@ -64,9 +65,12 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
     
     
     # derivative of sd parameters 
-    val <-  with(par.val, with(long.data, with(B, eval(parse(text=gr.mu)))))
-    val <- matrix(val, ncol=q1, byrow=FALSE)
-    gr.mu.val <- c(apply(val, 2, sum), rep(0, qL))
+    gr.mu.val <- c()
+    for(i in 1:nrow(B)){
+      val <-  with(par.val, with(long.data[i,], with(B[i,], eval(parse(text=gr.mu)))))
+      gr.mu.val <- rbind(gr.mu.val, val)
+    }
+    gr.mu.val <- c(apply(gr.mu.val, 2, sum), rep(0, qL))
     
     gr.ran.val <- c()
     for(i in 1:n){

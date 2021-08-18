@@ -20,6 +20,7 @@ est_fixed <- function(RespLog, long.data, Jfixed,
     
     # evaluate h-likelihood
     mu.val <- with(long.data, with(par.val, with(B, eval(parse(text=RespLog$mu.loglike)))))
+    
     if(Ysigma) {
       sigma.val <-  with(par.val, with(Bi, eval(parse(text=RespLog$sigma.loglike))))
     } else sigma.val <- 0

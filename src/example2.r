@@ -168,7 +168,11 @@ simdat <- simdat %>%
   arrange(patid, day)
 
 ########################## plots: real VS simulated
-gg1 <- ggplot(dat, aes(day, lgcopy, group=patid)) +geom_line()+
+plot_ID <- sample(names(ni),3)
+plot_dat <- subset(dat0, patid %in% plot_ID)
+
+
+gg1 <- ggplot(plot_dat, aes(day, lgcopy, group=patid)) +geom_line()+
   geom_point( shape=1)+  theme(legend.position="bottom")+
   xlab('time (re-scaled to [0,1])') + 
   ylab('lgcopy (Viral load in log10 scale)')+
@@ -176,6 +180,7 @@ gg1 <- ggplot(dat, aes(day, lgcopy, group=patid)) +geom_line()+
   ylim(1,8)+
   labs(title="Real data")
 print(gg1)
+ggsave(here::here("figures", "2.pdf"))
 
 gg2 <- ggplot(simdat, aes(day, lgcopy, group=patid)) +geom_line()+
   geom_point( shape=1)+  theme(legend.position="bottom")+

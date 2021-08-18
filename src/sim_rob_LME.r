@@ -47,7 +47,7 @@ sigmaObject1 <- list(
   link='log',
   ran.dist="inverse-Chi",
   df=fit.df,
-  str.val=c(alpha0, alpha1) 
+  str.fixed=c(alpha0, alpha1) 
 )
 
 
