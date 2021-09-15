@@ -29,7 +29,10 @@ alpha0 <- log(0.02)
 alpha1 <-  3.4
 
 nf <- function(p1,p2, t) p1+p2*t
-
+script <- "
+nf <- function(p1,p2, t) p1+p2*t
+"
+writeLines(script, here::here("src","nf.R"))
 
 
 
@@ -123,7 +126,7 @@ for(k in 1:rep){
     
     if(class(nlme.fit)!="try-error") {
       ########################## run Robust nlme model
-      Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject1, long.data=simdat, idVar="patid"))
+      Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject1, long.data=simdat, idVar="patid", sd.method = "aGH"))
       if(class(Rnlme.fit)!="try-error") convg <- Rnlme.fit$convergence
     }
   }
@@ -212,13 +215,16 @@ get_summary <- function(output.model, type){
   SE.em.disp <- apply(output.model$dispersion[!na.index,], 2, sd)
   
   
-  sum.model <- list(fixed=cbind(EST, BIAS,SE.em, SE, MSE, Coverage), 
-                    dispersion=cbind(EST.disp, BIAS.disp, SE.em.disp, MSE.disp))
+  sum.model <- list(fixed=cbind(EST, BIAS, MSE, SE.em, SE , Coverage), 
+                    dispersion=cbind(EST.disp, BIAS.disp, MSE.disp, SE.em.disp ))
 }
 
 
 (sum.nlme <- get_summary(output.nlme, type='nlme'))
 (sum.Rnlme <- get_summary(output.Rnlme, type="Rnlme"))
+
+saveRDS(sum.nlme, here::here("data", "Rob_LME_normal_nlmeRes.rds"))
+saveRDS(sum.Rnlme, here::here("data", "Rob_LME_normal_RnlmeRes.rds"))
 
 saveRDS(sum.nlme, here::here("data", "Rob_LME_normal_nlmeRes.rds"))
 saveRDS(sum.Rnlme, here::here("data", "Rob_LME_normal_RnlmeRes.rds"))

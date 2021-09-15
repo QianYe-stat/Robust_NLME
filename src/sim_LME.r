@@ -213,3 +213,25 @@ saveRDS(sum.Rnlme, here::here("data", "LME_RnlmeRes.rds"))
 
 xtable(cbind(sum.Rnlme$fixed, sum.nlme$fixed), type = "latex",digits = 3)
 xtable(cbind(sum.Rnlme$dispersion,sum.nlme$dispersion), type = "latex",digits = 3)
+
+xtable(cbind(LME_RnlmeRes$fixed[,"EST"],
+             LME_RnlmeRes$fixed[,"BIAS"]/c(6,-2.5)*100,
+             LME_RnlmeRes$fixed[,"MSE"]/c(6,-2.5)*100, 
+             LME_RnlmeRes$fixed[,"SE.em"],
+             LME_RnlmeRes$fixed[,"SE"],
+             LME_RnlmeRes$fixed[,"Coverage"],
+             LME_nlmeRes$fixed[,"EST"],
+             LME_nlmeRes$fixed[,"BIAS"]/c(6,-2.5)*100,
+             LME_nlmeRes$fixed[,"MSE"]/c(6,-2.5)*100, 
+             LME_nlmeRes$fixed[,"SE.em"],
+             LME_nlmeRes$fixed[,"SE"],
+             LME_nlmeRes$fixed[,"Coverage"]
+             ), type = "latex",digits = 3)
+xtable(cbind(LME_RnlmeRes$dispersion[,"EST.disp"],
+             LME_RnlmeRes$dispersion[,"BIAS.disp"]/c(0.42,0.13, 0.2)*100,
+             LME_RnlmeRes$dispersion[,"MSE.disp"]/c(0.42,0.13, 0.2)*100, 
+             LME_RnlmeRes$dispersion[,"SE.em.disp"],
+             LME_nlmeRes$dispersion[,"EST.disp"],
+             LME_nlmeRes$dispersion[,"BIAS.disp"]/c(0.42,0.13, 0.2)*100,
+             LME_nlmeRes$dispersion[,"MSE.disp"]/c(0.42,0.13, 0.2)*100, 
+             LME_nlmeRes$dispersion[,"SE.em.disp"]), type = "latex",digits = 3)

@@ -1,14 +1,4 @@
-library(nlme)
-library(tidyverse)
-library(Deriv)
-library(stringr)
-library(LaplacesDemon)
-library(purrr)
-library(MASS)
-library(mvtnorm)
-library(tibble)
-library(ggpubr)
-library(Matrix)
+
 rm(list=ls())
 rep <- 200
 n <- 100
@@ -29,6 +19,10 @@ alpha0 <- log(0.02)
 alpha1 <-  3.4
 ndf <- 3
 nf <- function(p1,p2, t) p1+p2*t
+script <- "
+nf <- function(p1,p2, t) p1+p2*t
+"
+writeLines(script, here::here("src","nf.R"))
 fit.df <- 3
 
 
@@ -73,7 +67,7 @@ nlmeObject1 <- list(
 get_nlme_loglike(nlmeObject1)
 set.seed(123)
 
-set.seed(123)
+
 beta.est.n <- beta.sd.n <- disp.est.n <- beta.COV.n <- beta.SqErr.n <- disp.SqErr.n <- c()
 beta.est <- beta.sd <- disp.est <- beta.COV <- beta.SqErr<- disp.SqErr <- c()
 
@@ -125,7 +119,7 @@ for(k in 1:rep){
     
     if(class(nlme.fit)!="try-error") {
       ########################## run Robust nlme model
-      Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject1, long.data=simdat, idVar="patid"))
+      Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject1, long.data=simdat, idVar="patid", sd.method="aGH"))
       if(class(Rnlme.fit)!="try-error") convg <- Rnlme.fit$convergence
     }
   }
@@ -199,19 +193,25 @@ get_summary <- function(output.model, type){
   cat("drop", sum(na.index), "invalid results")
   
   EST <- apply(output.model$fixed[!na.index,],2,mean)
-  BIAS <- abs(EST-beta)
+  BIAS <- abs(EST-beta)/abs(beta)*100
   SE.em <- apply(output.model$fixed[!na.index,],2,sd)
   SE <- apply(output.model$sd[!na.index,],2,FUN = function(t){sqrt(mean(t^2))})
-  MSE <- apply(output.model$sqErr[!na.index,], 2, mean)
+  MSE <- apply(output.model$sqErr[!na.index,], 2, mean)/abs(beta)*100
   Coverage <- apply(output.model$coverage[!na.index,],2,mean)
   
   
   EST.disp <- apply(output.model$dispersion[!na.index,], 2, mean)
-  if(type=="nlme")  BIAS.disp <- abs(EST.disp-c(d,exp(alpha0)))
-  if(type=="Rnlme") BIAS.disp <- abs(EST.disp-c(d,exp(alpha0), alpha1))
+  if(type=="nlme") {
+    BIAS.disp <- abs(EST.disp-c(d,exp(alpha0)))/abs(c(d,exp(alpha0)))*100
+    MSE.disp <- apply(output.model$dispersion.SqErr[!na.index,] , 2, mean)/abs(c(d,exp(alpha0)))*100
+  }
+    
+  if(type=="Rnlme") {
+    BIAS.disp <- abs(EST.disp-c(d,exp(alpha0), alpha1))/abs(c(d,exp(alpha0), alpha1))*100
+    MSE.disp <- apply(output.model$dispersion.SqErr[!na.index,] , 2, mean)/abs(c(d,exp(alpha0), alpha1))*100
+  }
   
   SE.em.disp <- apply(output.model$dispersion[!na.index,], 2, sd)
-  MSE.disp <- apply(output.model$dispersion.SqErr[!na.index,] , 2, mean)
   
   sum.model <- list(fixed=cbind(EST, BIAS,SE.em, SE, MSE, Coverage), 
                     dispersion=cbind(EST.disp, BIAS.disp, SE.em.disp, MSE.disp))
@@ -222,8 +222,33 @@ get_summary <- function(output.model, type){
 (sum.Rnlme <- get_summary(output.Rnlme, type="Rnlme"))
 
 
-saveRDS(sum.nlme, here::here("data", "Rob_LME_nlmeRes.rds"))
-saveRDS(sum.Rnlme, here::here("data", "Rob_LME_RnlmeRes.rds"))
+saveRDS(sum.nlme, here::here("data", "Rob_LME_aGH_nlmeRes.rds"))
+saveRDS(sum.Rnlme, here::here("data", "Rob_LME_aGH_RnlmeRes.rds"))
 
 xtable(cbind(sum.Rnlme$fixed, sum.nlme$fixed), type = "latex",digits = 3)
 xtable(cbind(sum.Rnlme$dispersion, rbind(sum.nlme$dispersion,c(1,1,1,1))), type = "latex", digits = 3)
+
+
+xtable(cbind(Rob_LME_aGH_RnlmeRes$fixed[,"EST"],
+             Rob_LME_aGH_RnlmeRes$fixed[,"BIAS"],
+             Rob_LME_aGH_RnlmeRes$fixed[,"MSE"], 
+             Rob_LME_aGH_RnlmeRes$fixed[,"SE.em"],
+             Rob_LME_aGH_RnlmeRes$fixed[,"SE"],
+             Rob_LME_aGH_RnlmeRes$fixed[,"Coverage"],
+             Rob_LME_aGH_nlmeRes$fixed[,"EST"],
+             Rob_LME_aGH_nlmeRes$fixed[,"BIAS"],
+             Rob_LME_aGH_nlmeRes$fixed[,"MSE"], 
+             Rob_LME_aGH_nlmeRes$fixed[,"SE.em"],
+             Rob_LME_aGH_nlmeRes$fixed[,"SE"],
+             Rob_LME_aGH_nlmeRes$fixed[,"Coverage"]
+), type = "latex",digits = 3)
+
+xtable(cbind(Rob_LME_aGH_RnlmeRes$dispersion[,"EST.disp"],
+             Rob_LME_aGH_RnlmeRes$dispersion[,"BIAS.disp"],
+             Rob_LME_aGH_RnlmeRes$dispersion[,"MSE.disp"], 
+             Rob_LME_aGH_RnlmeRes$dispersion[,"SE.em.disp"],
+             Rob_LME_aGH_nlmeRes$dispersion[,"EST.disp"],
+             Rob_LME_aGH_nlmeRes$dispersion[,"BIAS.disp"],
+             Rob_LME_aGH_nlmeRes$dispersion[,"MSE.disp"], 
+             Rob_LME_aGH_nlmeRes$dispersion[,"SE.em.disp"]
+), type = "latex",digits = 3)

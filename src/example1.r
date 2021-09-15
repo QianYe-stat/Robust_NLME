@@ -56,14 +56,26 @@ sigmaObject1 <- list(
   link='log',
   ran.dist="inverse-Chi",
   df=ndf,
-  str.val=c(2*log(nlme.fit1$sigma), coef(sigma.fit)[2]),
-  lower=NULL,
-  upper=NULL
+  str.fixed=c(2*log(nlme.fit1$sigma), coef(sigma.fit)[2]),
+  lower.fixed=NULL,
+  upper.fixed=NULL
  )
 
 
-
-
+ndf <- 5
+sigmaObject2 <- list(
+  model=~1+day+(1|patid),
+  link='log',
+  ran.dist="normal",
+  str.fixed=c(2*log(nlme.fit1$sigma), coef(sigma.fit)[2]),
+  str.disp=3,
+  lower.fixed=c(-1,-2),
+  upper.fixed=c(3,4),
+  lower.disp=0,  
+  upper.disp=5  
+)
+sigmaObject <- sigmaObject2
+get_info_sigma(sigmaObject2)
 
 # mean structure model:  
 nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
@@ -76,7 +88,7 @@ nlmeObject1 <- list(
   random = p1+p2+p3 ~1,
   family='normal', 
   ran.dist='normal',
-  sigma=sigmaObject1,    # residual dispersion model (include residual random eff)
+  sigma=sigmaObject2,    # residual dispersion model (include residual random eff)
   ran.Cov=NULL,  # random effect dispersion model (include random random eff (double random eff))
   str.fixed=fixef(nlme.fit1),  # starting value for fixed effect
   str.disp=apply(ranef(nlme.fit1),2,sd),  # starting value for fixed dispersion of random eff
@@ -85,7 +97,7 @@ nlmeObject1 <- list(
   lower.disp=c(0,0,0), # lower bounds for fixed dispersion of random eff
   upper.disp=c(Inf,Inf,Inf) # upper bounds for  fixed dispersion of random eff
 )
-
+get_nlme_loglike(nlmeObject1)
 out1 <- Rnlme(nlmeObject=nlmeObject1, long.data=dat, idVar="patid")
 out2 <- Rnlme(nlmeObject=nlmeObject1, long.data=dat, idVar="patid") # df=5
 out3 <- Rnlme(nlmeObject=nlmeObject1, long.data=dat, idVar="patid")  # df=7

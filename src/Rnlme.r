@@ -3,7 +3,7 @@
 #' @param idVar
 
 
-Rnlme <- function(nlmeObject, long.data, idVar, 
+Rnlme <- function(nlmeObject, long.data, idVar, sd.method, ghsize=4,
                   itertol=1e-3, Ptol=1e-2, iterMax=20, Verbose=FALSE){
   #set.seed(123)
   ##################################### settings for nlme model 
@@ -149,12 +149,33 @@ Rnlme <- function(nlmeObject, long.data, idVar,
   cat("Start estimating SD for fixed parameters ...\n ...\n")
   
   # estimate sd's of parameter estimates  
-  sd_output <- get_sd(RespLog=Jloglike, long.data,  idVar,
+  if(sd.method=="HL") {
+    sd_output <- get_sd(RespLog=Jloglike, long.data,  idVar,
                              fixedest0, dispest0, invSIGMA0, SIGMA0,
                              Bi, B, q_split,
                              Jfixed,Jraneff)
+    fixedSD <- sd_output
   
-  
+  } else if(sd.method=="aGH"){
+    sd_output <- get_sd_aGH(RespLog=Jloglike, long.data, idVar, 
+                                        fixedest0, dispest0, invSIGMA0,Bi, B,
+                                        Jfixed, Jraneff,  
+                                        ghsize=ghsize, Silent=T, epsilon=10^{-6}, 
+                                        parallel=TRUE)
+    fixedSD <- sd_output
+   
+  } else if(sd.method=="Both"){
+    sd_HL <- get_sd(RespLog=Jloglike, long.data,  idVar,
+                        fixedest0, dispest0, invSIGMA0, SIGMA0,
+                        Bi, B, q_split,
+                        Jfixed,Jraneff)
+    sd_aGH <-  get_sd_aGH(RespLog=Jloglike, long.data, idVar, 
+                          fixedest0, dispest0, invSIGMA0,Bi, B,
+                          Jfixed, Jraneff,  
+                          ghsize=ghsize, Silent=T, epsilon=10^{-6}, 
+                          parallel=TRUE)
+    fixedSD=list(HL=sd_HL, aGH=sd_aGH)
+  }
   cat("done.\n")
   
   #### AIC
@@ -162,19 +183,18 @@ Rnlme <- function(nlmeObject, long.data, idVar,
   BIC <- length(c(fixedest0, dispest0, Lval0))*log(nrow(B))-2*loglike_value0
   
   list(fixedest = fixedest0,
-       fixedSD  = sd_output,
+       fixedSD  = fixedSD,
        Bi = Bi, 
-       #B = B,
+       B = B,
        SIGMA = solve(invSIGMA0), 
        dispersion = dispest0,
        convergence = convergence==0,
        loglike_value = loglike_value0,
        AIC=AIC,
-       BIC=BIC
-       #long.data = long.data,
+       BIC=BIC,
+       long.data = long.data,
        #surv.data = surv.data,
-       #RespLog = RespLog,
-       #idVar = idVar, uniqueID = uniqueID,
-       #Jraneff = Jraneff
+       RespLog = Jloglike,Jfixed=Jfixed, Jraneff = Jraneff,
+       idVar = idVar, uniqueID = uniqueID
   )
 }
