@@ -10,7 +10,7 @@ get_sd <- function(RespLog, long.data, idVar,
   q <- length(Jraneff)
   q1 <- q_split[1]
   n <- nrow(Bi)
-  
+
   pars <- c(Jfixed, Jraneff)
   
   
@@ -18,12 +18,14 @@ get_sd <- function(RespLog, long.data, idVar,
   if(Ysigma) Hmat.sigma <- get_Hessian(RespLog$sigma.loglike, pars)
   if(Yrandisp) Hmat.randisp <- get_Hessian(RespLog$randisp.loglike, pars)
   # Hmat.ran <- get_Hessian(RespLog$ran.loglike, pars)
+
   
   par.val <- as.list(c(fixedest0, dispest0))
   par.val$invSIGMA <- invSIGMA0
   
   
   mu.val <- get_Hvalue(Hmat.mu, p+q, long.data, par.val, B)
+
   
   if(Ysigma){
     sigma.val <- get_Hvalue(Hmat.sigma, p+q, data=NULL, par.val, Bi)
@@ -41,6 +43,7 @@ get_sd <- function(RespLog, long.data, idVar,
   #Hval <-  as.matrix(-(mu.val+ran.val))
   #Hval <-  as.matrix(-(mu.val+sigma.val+randisp.val))
   covMat <- solve(Hval)
+
   sd2 <- diag(covMat)[1:p]
   sd <- sqrt(sd2)
   return(sd)
