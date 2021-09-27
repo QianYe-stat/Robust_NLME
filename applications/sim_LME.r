@@ -1,0 +1,237 @@
+library(nlme)
+library(tidyverse)
+library(Deriv)
+library(stringr)
+library(LaplacesDemon)
+library(purrr)
+library(MASS)
+library(mvtnorm)
+library(tibble)
+library(ggpubr)
+library(Matrix)
+library(xtable)
+rm(list=ls())
+rep <- 200
+n <- 100
+ni <- 15
+N <- n*ni
+ti <- seq(0, 1, length.out=ni)
+
+patid <- rep(1:n, each=ni)
+day <- rep(ti, n)
+
+uniqueID <- seq(1:n)   
+
+beta <- c(6.0, -2.5)
+d <- c(0.42, 0.13)
+Mat <- matrix(c(1,0.5, 0.5, 1), ncol=2)
+sigma <- 0.2
+
+nf <- function(p1,p2, t) p1+p2*t
+
+
+########################## source all functions  
+(file.sources = list.files(path=here::here("src"),pattern="*.R$"))
+(file.sources <- paste0(here::here("src"), "/", file.sources))
+sapply(file.sources,source)
+
+
+########################## model specification
+sigmaObject1 <- list(
+  model=NULL,
+  str.val=sigma,
+  lower=0,
+  upper=Inf
+)
+
+# mean structure model:  
+nlmeObject1 <- list(
+  nf = function(p1,p2, t) p1+p2*t ,
+  model= lgcopy ~ nf(p1,p2, day),
+  var=c("day"),
+  fixed = p1+p2 ~1,
+  random = p1+p2 ~1,
+  family='normal', 
+  ran.dist='normal',
+  sigma=sigmaObject1,    # residual dispersion model (include residual random eff)
+  ran.Cov=NULL,  # random effect dispersion model (include random random eff (double random eff))
+  str.fixed=beta,  # starting value for fixed effect
+  str.disp=d,  # starting value for fixed dispersion of random eff
+  lower.fixed=NULL, # lower bounds for fixed eff
+  upper.fixed=rep(100,2), # upper bounds for fixed eff
+  lower.disp=c(0,0), # lower bounds for fixed dispersion of random eff
+  upper.disp=c(Inf,Inf) # upper bounds for  fixed dispersion of random eff
+)
+
+get_nlme_loglike(nlmeObject1)
+set.seed(123)
+
+set.seed(123)
+beta.est.n <- beta.sd.n <- disp.est.n <- beta.COV.n <- beta.SqErr.n <- disp.SqErr.n <- c()
+beta.est <- beta.sd <- disp.est <- beta.COV <- beta.SqErr<- disp.SqErr <- c()
+dat <- NULL
+
+
+
+for(k in 1:rep){
+  cat("This is run", k, "\n")
+  
+  nlme.fit <- Rnlme.fit <- 0
+  class(nlme.fit) <- class(Rnlme.fit)<- "try-error"
+  convg <- FALSE
+  
+  while(class(nlme.fit)=="try-error" | convg==FALSE|class(Rnlme.fit)=="try-error"){
+    ##########################  simulate data set
+    
+    D <- diag(d) %*% Mat %*% diag(d)
+    u <- rmvnorm(n, sigma=D)
+    error <- rnorm(N, sd=sigma)
+    
+    simdat <- c()
+    ## data set
+    for(i in 1:n){
+      
+      ui <- u[i,]
+      indexi <- patid==uniqueID[i]
+      errori <- error[indexi]
+      
+      parami <- cbind(matrix(rep((beta+ui), ni), byrow=TRUE, ncol=length(beta)), ti)
+      
+      outi <- apply(parami, 1, FUN=function(t){nf(t[1], t[2], t[3])})
+      
+      dati <- data.frame(patid=uniqueID[i], day=ti, lgcopy=outi+errori)
+      
+      simdat <- rbind(simdat, dati)
+    }
+    
+    simdat <- simdat %>% arrange(patid, day)
+    #dat[[k]] <- simdat
+    
+    ########################## run nlme model
+    simdat1 <- groupedData(lgcopy~day|patid, data=simdat)
+    nf <-  function(p1,p2, t) p1+p2*t
+    nlme.fit <- try(nlme(lgcopy~nf(p1,p2, day),fixed = p1+p2 ~1,random = p1+p2 ~1,
+                         data =simdat1,start=c(beta)))
+    
+    if(class(nlme.fit)!="try-error") {
+      ########################## run Robust nlme model
+      Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject1, long.data=simdat, idVar="patid"))
+      if(class(Rnlme.fit)!="try-error") convg <- Rnlme.fit$convergence
+    }
+  }
+  ################ output from nlme package
+  nlme.summary <- summary(nlme.fit)
+  names(nlme.fit)
+  names(summary(nlme.fit))
+  
+  beta.nlme <- nlme.fit$coefficients$fixed
+  sd.nlme <- nlme.summary$tTable[,"Std.Error"]
+  SqErr.nlme <- (beta.nlme-beta)^2
+  
+  lower.nlme <- beta.nlme-1.96*sd.nlme
+  upper.nlme <- beta.nlme+1.96*sd.nlme
+  cover.nlme <- (lower.nlme <= beta) & (beta <= upper.nlme)
+  
+  disp.nlme <- as.numeric(VarCorr(nlme.fit)[,"StdDev"])
+  names(disp.nlme) <- names(VarCorr(nlme.fit)[,"StdDev"])
+  
+  disp.SqErr.nlme <- (disp.nlme-c(d,sigma))^2
+  
+  beta.est.n <- rbind(beta.est.n, beta.nlme)
+  beta.sd.n <- rbind(beta.sd.n, sd.nlme) 
+  beta.SqErr.n <- rbind(beta.SqErr.n, SqErr.nlme)
+  beta.COV.n <- rbind(beta.COV.n, cover.nlme)
+  
+  
+  disp.est.n <- rbind(disp.est.n, disp.nlme)
+  disp.SqErr.n <- rbind(disp.SqErr.n, disp.SqErr.nlme)
+  ################ output from Rnlme function
+  
+
+  
+  beta.lower <- Rnlme.fit$fixedest-1.96*Rnlme.fit$fixedSD
+  beta.upper <- Rnlme.fit$fixedest+1.96*Rnlme.fit$fixedSD
+  beta.cover <- (beta.lower<=beta) & (beta<=beta.upper)
+  
+  
+  beta.est <- rbind(beta.est, Rnlme.fit$fixedest)
+  beta.sd <- rbind(beta.sd, Rnlme.fit$fixedSD)
+ 
+  beta.SqErr <- rbind(beta.SqErr, (Rnlme.fit$fixedest-beta)^2)
+  beta.COV <- rbind(beta.COV, beta.cover)
+  
+  disp.est <- rbind(disp.est, Rnlme.fit$dispersion)
+  disp.SqErr <- rbind(disp.SqErr, (Rnlme.fit$dispersion-c(d,sigma))^2)
+  
+}
+
+
+
+output.nlme <- list(fixed=beta.est.n, sd=beta.sd.n, sqErr=beta.SqErr.n,
+                    coverage=beta.COV.n, dispersion=disp.est.n, dispersion.SqErr=disp.SqErr.n)
+
+output.Rnlme <- list(fixed=beta.est, sd=beta.sd, sqErr=beta.SqErr,
+                     coverage=beta.COV, dispersion=disp.est, dispersion.SqErr=disp.SqErr)
+
+get_summary <- function(output.model, type){
+  sd.out <- output.model$sd
+  fix.out <- output.model$fixed
+  
+  na.index1 <- apply(sd.out,1,FUN=function(t){any(is.na(t))|any(t<0.001)})
+  na.index2 <- apply(fix.out,1,FUN=function(t){any(t>=25)})
+  
+  na.index <- na.index1|na.index2
+  
+  cat("drop", sum(na.index), "invalid results")
+  
+  EST <- apply(output.model$fixed[!na.index,],2,mean)
+  BIAS <- abs(EST-beta)
+  SE.em <- apply(output.model$fixed[!na.index,],2,sd)
+  SE <- apply(output.model$sd[!na.index,],2,FUN = function(t){sqrt(mean(t^2))})
+  MSE <- apply(output.model$sqErr[!na.index,], 2, mean)
+  Coverage <- apply(output.model$coverage[!na.index,],2,mean)
+  
+  
+  EST.disp <- apply(output.model$dispersion[!na.index,], 2, mean)
+  BIAS.disp <- abs(EST.disp-c(d,sigma))
+   
+  SE.em.disp <- apply(output.model$dispersion[!na.index,], 2, sd)
+  MSE.disp <- apply(output.model$dispersion.SqErr[!na.index,] , 2, mean)
+  
+  sum.model <- list(fixed=cbind(EST, BIAS,SE.em, SE, MSE, Coverage), 
+                    dispersion=cbind(EST.disp, BIAS.disp, SE.em.disp, MSE.disp))
+}
+
+
+
+(sum.nlme <- get_summary(output.nlme, type='nlme'))
+(sum.Rnlme <- get_summary(output.Rnlme, type="Rnlme"))
+
+
+saveRDS(sum.nlme, here::here("data", "LME_nlmeRes.rds"))
+saveRDS(sum.Rnlme, here::here("data", "LME_RnlmeRes.rds"))
+
+xtable(cbind(sum.Rnlme$fixed, sum.nlme$fixed), type = "latex",digits = 3)
+xtable(cbind(sum.Rnlme$dispersion,sum.nlme$dispersion), type = "latex",digits = 3)
+
+xtable(cbind(LME_RnlmeRes$fixed[,"EST"],
+             LME_RnlmeRes$fixed[,"BIAS"]/c(6,-2.5)*100,
+             LME_RnlmeRes$fixed[,"MSE"]/c(6,-2.5)*100, 
+             LME_RnlmeRes$fixed[,"SE.em"],
+             LME_RnlmeRes$fixed[,"SE"],
+             LME_RnlmeRes$fixed[,"Coverage"],
+             LME_nlmeRes$fixed[,"EST"],
+             LME_nlmeRes$fixed[,"BIAS"]/c(6,-2.5)*100,
+             LME_nlmeRes$fixed[,"MSE"]/c(6,-2.5)*100, 
+             LME_nlmeRes$fixed[,"SE.em"],
+             LME_nlmeRes$fixed[,"SE"],
+             LME_nlmeRes$fixed[,"Coverage"]
+             ), type = "latex",digits = 3)
+xtable(cbind(LME_RnlmeRes$dispersion[,"EST.disp"],
+             LME_RnlmeRes$dispersion[,"BIAS.disp"]/c(0.42,0.13, 0.2)*100,
+             LME_RnlmeRes$dispersion[,"MSE.disp"]/c(0.42,0.13, 0.2)*100, 
+             LME_RnlmeRes$dispersion[,"SE.em.disp"],
+             LME_nlmeRes$dispersion[,"EST.disp"],
+             LME_nlmeRes$dispersion[,"BIAS.disp"]/c(0.42,0.13, 0.2)*100,
+             LME_nlmeRes$dispersion[,"MSE.disp"]/c(0.42,0.13, 0.2)*100, 
+             LME_nlmeRes$dispersion[,"SE.em.disp"]), type = "latex",digits = 3)

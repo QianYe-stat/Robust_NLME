@@ -32,8 +32,29 @@ get_info_sigma<- function(sigmaObject){
     raneff <- paste("a", 0:(q-1), sep="")  # name random effects
     
     if(sigmaObject$ran.dist=="inverse-Chi"){
+      df <- sigmaObject$df
       
-      raneff_loglike <- make_loglike_invChi(raneff, sigmaObject$df)
+      raneff_loglike <- make_loglike_invChi(raneff, df)
+      
+      linear_pred <- paste0(c(fixed, raneff), rep("*", p+q), 
+                            c(rvX, rvZ), sep="", collapse="+")
+      
+    } else if(sigmaObject$ran.dist=="normal"){
+      
+      disp.par <- paste("sigma", 0:(q-1), sep="")
+      
+      raneff_loglike <- make_loglike_normal(raneff, mean=rep("0",q), sd=rep("1",q) ) 
+      
+      linear_pred <- paste0(c(fixed, paste0(raneff, rep("*",q), disp.par)), rep("*", p+q), 
+                        c(rvX, rvZ), sep="", collapse="+")
+      df<- NULL
+    } else if(sigmaObject$ran.dist=="stdnormal"){
+      
+      raneff_loglike <- make_loglike_normal(raneff, mean=rep("0",q), sd=rep("1",q) ) 
+      
+      linear_pred <- paste0(c(fixed, raneff), rep("*", p+q), 
+                            c(rvX, rvZ), sep="", collapse="+")
+      df<- NULL
       
     }
   } else { 
@@ -41,24 +62,44 @@ get_info_sigma<- function(sigmaObject){
     raneff_loglike <- NULL
   }
   
-  linear_pred <- paste0(c(fixed, raneff), rep("*", p+q), 
-                        c(rvX, rvZ), sep="", collapse="+")
+  
   
   if(sigmaObject$link=="log"){
     sigma_expr <- paste0("exp(", linear_pred, ")")
   }
   
-  str.val <- sigmaObject$str.val
-  lower <- sigmaObject$lower
-  upper<- sigmaObject$upper
   
-  if(is.null(lower)) lower <- rep(-Inf, p)
-  if(is.null(upper)) upper <- rep(Inf, p)
   
-  names(str.val) <- names(lower) <- names(upper) <- fixed
+  str.fixed <- sigmaObject$str.fixed
+  lower.fixed <- sigmaObject$lower.fixed
+  upper.fixed <- sigmaObject$upper.fixed
+  
+
+  if(is.null(lower.fixed)) lower.fixed <- rep(-Inf, p)
+  if(is.null(upper.fixed)) upper.fixed <- rep(Inf, p)
+  
+  names(str.fixed) <- names(lower.fixed) <- names(upper.fixed) <- fixed
+  
+  if(sigmaObject$ran.dist=="normal"){
+    
+  str.disp <- sigmaObject$str.disp
+  lower.disp <- sigmaObject$lower.disp
+  upper.disp <- sigmaObject$upper.disp
+  
+  if(is.null(lower.disp)) lower.disp <- rep(0, q)
+  if(is.null(upper.disp)) upper.disp <- rep(Inf, q)
+  
+  names(str.disp) <- names(lower.disp) <- names(upper.disp) <- disp.par
+  
+  fixed <- c(fixed, disp.par)
+  
+  str.fixed <- c(str.fixed, str.disp)
+  lower.fixed <- c(lower.fixed, lower.disp)
+  upper.fixed <- c(upper.fixed, upper.disp)
+  }
   
   return(list(sigmaExpr=sigma_expr, loglike=raneff_loglike, raneff=raneff, fixed=fixed, 
-              df=sigmaObject$df,str.val=str.val,lower=lower, upper=upper))
+              df=df,str.val=str.fixed,lower=lower.fixed, upper=upper.fixed))
 }
 
 

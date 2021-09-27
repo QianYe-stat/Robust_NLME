@@ -1,6 +1,17 @@
 get_nlme_loglike <- function(nlmeObject){
   
   ############## Return from get_info_sigma #####################
+  if(is.null(nlmeObject$sigma$model)){
+    sigma.raneff <- NULL  # random effect in residual dispersion (residual random effects)
+    sigma.fixed <- "sigma"
+    sigma.loglike <- NULL
+    sigma.str <- nlmeObject$sigma$str.val
+    sigma.lower <- nlmeObject$sigma$lower
+    sigma.upper <- nlmeObject$sigma$upper
+    sigma.df <- NULL
+    sigmaExpr <- "(sigma^2)"
+    
+  } else {
   sigmaInfo <- get_info_sigma(nlmeObject$sigma)
   sigma.raneff <- sigmaInfo$raneff  # random effect in residual dispersion (residual random effects)
   sigma.fixed <- sigmaInfo$fixed
@@ -9,6 +20,8 @@ get_nlme_loglike <- function(nlmeObject){
   sigma.lower <- sigmaInfo$lower
   sigma.upper <- sigmaInfo$upper
   sigma.df <- sigmaInfo$df
+  sigmaExpr <- sigmaInfo$sigmaExpr
+  }
   
   ranCovObject <- nlmeObject$ran.Cov
   ##################
@@ -27,16 +40,17 @@ get_nlme_loglike <- function(nlmeObject){
   ran.comp <- strsplit(sp.ran, "+",  fixed=T)[[1]]
   ran.comp <- str_trim(ran.comp)
   
-  sp <- strsplit(as.character(ranCovObject$varying.disp), "~",  fixed=T)[[2]]
-  randisp.comp <- strsplit(sp, "+",  fixed=T)[[1]]
-  randisp.comp <- str_trim(randisp.comp) 
-  
-  
   p <- length(fix.comp)  # dimension of fixed pars
   q <- length(ran.comp)  # dimension of random eff
   
   ran.ind <- c(1:p) * fix.comp %in% ran.comp
-  randisp.ind <- c(1:p) * fix.comp %in% randisp.comp  # identify the random effects with varying dispersion
+  
+  if(!is.null(ranCovObject)){
+    sp <- strsplit(as.character(ranCovObject$varying.disp), "~",  fixed=T)[[2]]
+    randisp.comp <- strsplit(sp, "+",  fixed=T)[[1]]
+    randisp.comp <- str_trim(randisp.comp) 
+    randisp.ind <- c(1:p) * fix.comp %in% randisp.comp  # identify the random effects with varying dispersion
+  }
   
   if(p>0){
     fixed <- paste0("beta", 1:p) # name fixed pars
@@ -58,13 +72,16 @@ get_nlme_loglike <- function(nlmeObject){
       }
       
       rm(sub)
-      sub <- randisp.ind[i]
-      if(sub!=0){
-        randisp <- c(randisp, paste0("b", sub)) # name the random effects for varying dispersion of random effect
-      } else {                                  # double random effects
-        randisp <- c(randisp, 0)
+      if(!is.null(ranCovObject)){
+        sub <- randisp.ind[i]
+        if(sub!=0){
+          randisp <- c(randisp, paste0("b", sub)) # name the random effects for varying dispersion of random effect
+        } else {                                  # double random effects
+          randisp <- c(randisp, 0)
+        }
+      } else {
+        randisp <- rep(0,q)
       }
-      
     }
   } else {
     raneff=NULL
@@ -78,8 +95,8 @@ get_nlme_loglike <- function(nlmeObject){
   
   if (nlmeObject$family=="normal"){ 
     
-    sigma <- sigmaInfo$sigmaExpr
-    loglike <- paste0("-0.5*(", resp, "-", mu, 
+    sigma <-  sigmaExpr
+    mu.loglike <- paste0("-0.5*(", resp, "-", mu, 
                       ")^2/",sigma, "-0.5*log(",sigma,")-0.5*log(2*pi)")
     
   }
@@ -88,9 +105,11 @@ get_nlme_loglike <- function(nlmeObject){
   disp <- str_subset(disp, "[^0]")
   randisp <- str_subset(randisp, "[^0]")
   
-  if(ranCovObject$ran.dist=="inverse-Chi"){
-    randisp.loglike <- make_loglike_invChi(randisp, ranCovObject$df)
-  }
+  if(!is.null(ranCovObject)){
+    if(ranCovObject$ran.dist=="inverse-Chi"){
+      randisp.loglike <- make_loglike_invChi(randisp, ranCovObject$df)
+    }
+  } 
   
   #####
   str.fixed <- nlmeObject$str.fixed
@@ -117,8 +136,10 @@ get_nlme_loglike <- function(nlmeObject){
   
   names(lower.fixed) <- names(upper.fixed) <- fixed
   
-  return(list(loglike=list(mu.loglike=loglike, sigma.loglike=sigma.loglike, 
-                           randisp.loglike=randisp.loglike,ran.loglike=ran.loglike),
+  if(!is.null(ranCovObject)){
+    loglike <- list(mu.loglike=mu.loglike, sigma.loglike=sigma.loglike, 
+                 randisp.loglike=randisp.loglike,ran.loglike=ran.loglike)
+    return(list(loglike=loglike,
               fixed.par=fixed, ran.eff=c(raneff,sigma.raneff, randisp), disp.par=c(disp,sigma.fixed),
               str.fixed=str.fixed, str.disp=str.disp,
               lower.fixed=lower.fixed, upper.fixed=upper.fixed,
@@ -129,4 +150,21 @@ get_nlme_loglike <- function(nlmeObject){
               ran.eff.dim=c(length(raneff),length(sigma.raneff), length(randisp)),
               sigma.df=sigma.df, randisp.df=ranCovObject$df,
               nf=nlmeObject$nf))
+  } else {
+    loglike <- list(mu.loglike=mu.loglike, sigma.loglike=sigma.loglike, 
+                    ran.loglike=ran.loglike)
+    return(list(loglike=loglike,
+                fixed.par=fixed, ran.eff=c(raneff,sigma.raneff), disp.par=c(disp,sigma.fixed),
+                str.fixed=str.fixed, str.disp=str.disp,
+                lower.fixed=lower.fixed, upper.fixed=upper.fixed,
+                lower.disp=lower.disp, upper.disp=upper.disp,
+                response=resp,
+                rvX=rvX,
+                SIGMA.dim=q,
+                ran.eff.dim=c(length(raneff),length(sigma.raneff)),
+                sigma.df=sigma.df,
+                nf=nlmeObject$nf))
+  }
+  
+  
 }

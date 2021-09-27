@@ -1,6 +1,10 @@
 est_individual_raneff <- function(RespLog, data, raneff, 
                                   fixedest, dispest, invSIGMA, 
                                   Verbose=TRUE) {
+  
+  Yrandisp <- !is.null(RespLog$randisp.loglike)
+  Ysigma <- !is.null(RespLog$sigma.loglike)
+  
   # ff() returns the value of h-likelihood
   ff <- function(xx){  
     fy <- numeric(1)
@@ -14,10 +18,14 @@ est_individual_raneff <- function(RespLog, data, raneff,
     mu.val <- with(par.val, with(data, eval(parse(text=RespLog$mu.loglike))))
     
     # values from residual dispersion model
-    sigma.val <- with(par.val, eval(parse(text=RespLog$sigma.loglike)))
+    if(Ysigma) {
+      sigma.val <- with(par.val, eval(parse(text=RespLog$sigma.loglike)))
+    } else sigma.val <- 0
     
     # values from random eff dispersion model
-    randisp.val <- with(par.val, eval(parse(text=RespLog$randisp.loglike)))
+    if(Yrandisp) {
+      randisp.val <- with(par.val, eval(parse(text=RespLog$randisp.loglike)))
+      } else randisp.val<-0 
     
     # values from the distribution of random effect
     ran.val <- c(with(par.val,  eval(parse(text=RespLog$ran.loglike))))
@@ -30,8 +38,8 @@ est_individual_raneff <- function(RespLog, data, raneff,
   k <-  length(raneff)
   
   gr.mu <- Deriv(RespLog$mu.loglike, raneff)
-  gr.sigma <- Deriv(RespLog$sigma.loglike, raneff)
-  gr.randisp <- Deriv(RespLog$randisp.loglike, raneff)
+  if(Ysigma) gr.sigma <- Deriv(RespLog$sigma.loglike, raneff)
+  if(Yrandisp) {gr.randisp <- Deriv(RespLog$randisp.loglike, raneff)}
   gr.ran <- Deriv(RespLog$ran.loglike, raneff)
   
   gr <- function(xx){
@@ -49,8 +57,15 @@ est_individual_raneff <- function(RespLog, data, raneff,
     val <- matrix(val, ncol=k, byrow=FALSE)
     gr.mu.val <- as.vector(apply(val, 2, sum))
     
-    gr.sigma.val <- as.vector(with(par.val, eval(parse(text=gr.sigma))))
-    gr.randisp.val <- as.vector(with(par.val, eval(parse(text=gr.randisp))))
+    if(Ysigma) {
+      gr.sigma.val <- as.vector(with(par.val, eval(parse(text=gr.sigma))))
+    } else gr.sigma.val <- rep(0,k)
+      
+    if(Yrandisp) {
+      gr.randisp.val <- as.vector(with(par.val, eval(parse(text=gr.randisp))))
+    } else {
+      gr.randisp.val <- rep(0,k)
+      }
     gr.ran.val <- as.vector(with(par.val, eval(parse(text=gr.ran))))
     
     fy <-  gr.mu.val + gr.sigma.val + gr.randisp.val + gr.ran.val

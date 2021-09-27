@@ -3,8 +3,9 @@
 #' @param idVar
 
 
-Rnlme <- function(nlmeObject, long.data, idVar, 
-                  itertol=1e-3, Ptol=2e-2, iterMax=20, Verbose=FALSE){
+Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=FALSE, sdghsize=4,
+                  itertol=1e-3, Ptol=1e-2, iterMax=20, Verbose=FALSE){
+
   #set.seed(123)
   ##################################### settings for nlme model 
   nlmeReturn <- get_nlme_loglike(nlmeObject)
@@ -48,8 +49,10 @@ Rnlme <- function(nlmeObject, long.data, idVar,
   likDiff <- Diff <- Diff0 <- 1
   convergence <- 1
   M <- 1
-  
-  while(!(likDiff <= itertol | (Diff <= Ptol & Diff0 <= Ptol ) | M > iterMax)) {
+
+  while(!(likDiff <= itertol | (Diff <= Ptol & Diff0 <= Ptol) |  M > iterMax)) {
+    Diff0 <- Diff
+
     #################################### estimation
     Diff0 <- Diff
     cat("############## Iteration:", M, "###############","\n")
@@ -66,7 +69,7 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     
     # estimate fixed parameters
     cat("Start estimating fixed parameters ... \n")
-    fixed.output <- est_fixed(RespLog=Jloglike, long.data, Jfixed,
+    fixed.output <- est_fixed(RespLog=Jloglike, long.data,Jfixed,
                               fixedest0, dispest0, invSIGMA0,
                               Bi, B, 
                               lower=lower.fixed, upper=upper.fixed,
@@ -85,6 +88,7 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     
     dispest <- disp.output$disp
     invSIGMA <- disp.output$invSIGMA
+    SIGMA <- disp.output$SIGMA
     Lval <- disp.output$Lval
     
     cat("done.\n")
@@ -104,6 +108,7 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     }
     
     # calculate relative changes in mean parameters
+    
     Diff <- mean(c(abs((fixedest - fixedest0)/(fixedest0 + 1e-6))))
     
     
@@ -116,13 +121,16 @@ Rnlme <- function(nlmeObject, long.data, idVar,
       cat("dispersion.par:", round(unlist(dispest), 2), "\n")
     }
     cat("loglike:", loglike_value, "\n")
+    cat("SIGMA:", as.matrix(SIGMA), "\n")
     cat("##########################################","\n")
     
     fixedest0 <- fixedest
     dispest0 <- dispest
     invSIGMA0 <- invSIGMA
+    SIGMA0 <- SIGMA
     Lval0 <- Lval
     loglike_value0 <- loglike_value
+    
     M <- M+1  
   }
   
@@ -135,56 +143,82 @@ Rnlme <- function(nlmeObject, long.data, idVar,
     message("Successful convergence. Iteration stops because likDiff <= itertol.")
     convergence <- 0
   }
-   if(Diff <= Ptol & Diff0 <= Ptol){
-     message("Successful convergence. Iteration stops because FixedParDiff <= Ptol in two consective iteration.")
-     convergence <- 0
-   }
+
+  if(Diff0 <= Ptol & Diff <= Ptol){
+    message("Successful convergence. Iteration stops because FixedParDiff <= Ptol in consective two iterations.")
+    convergence <- 0
+  }
+
   
-  cat("Start estimating SD for fixed parameters ...\n ...\n")
+
   
   # estimate sd's of parameter estimates  
-  sd_output <- get_sd(RespLog=Jloglike, long.data,  
-                      fixedest0, dispest0, invSIGMA0=solve(Mat),
-                      Bi, B, q_split,
-                      Jfixed, Jraneff)
-  long.data<- simdat
-  fixedest0 <- Rnlme.fit$fixedest
-  dispest0 <- Rnlme.fit$dispersion
-  Bi <- Rnlme.fit$Bi
-  B <- Rnlme.fit$B
-  q_split <- c(3,1,1)
+
+  if(sd.method=="HL") {
+    cat("Start estimating SD for fixed parameters ...\n ...\n")
+    
+    sd_output <- get_sd(RespLog=Jloglike, long.data,  idVar,
+                             fixedest0, dispest0, invSIGMA0, SIGMA0,
+                             Bi, B, q_split,
+                             Jfixed,Jraneff)
+    fixedSD <- sd_output
+    cat("done.\n")
   
-  get_sd(RespLog=Jloglike, long.data,  
-         fixedest0, dispest0, invSIGMA0=solve(Mat),
-         Bi, B, q_split,
-         Jfixed, Jraneff)
-  get_sd(RespLog=Jloglike, long.data,  
-         fixedest0, dispest0=list(d1=d[1],d2=d[2],d3=d[3], alpha0=alpha0, alpha1=alpha1), 
-         invSIGMA0=Rnlme.fit$invSIGMA,
-         Bi, B, q_split,
-         Jfixed, Jraneff)
+  } else if(sd.method=="aGH"){
+    cat("Start estimating SD for fixed parameters ...\n ...\n")
+    sd_output <- get_sd_aGH(RespLog=Jloglike, long.data, idVar, 
+                                        fixedest0, dispest0, invSIGMA0,Bi, B,
+                                        Jfixed, Jraneff,  
+                                        ghsize=ghsize, Silent=T, epsilon=10^{-6}, 
+                                        parallel=TRUE)
+    fixedSD <- sd_output
+    cat("done.\n")
+   
+  } else if(sd.method=="Both"){
+    cat("Start estimating SD for fixed parameters ...\n ...\n")
+    sd_HL <- get_sd(RespLog=Jloglike, long.data,  idVar,
+                        fixedest0, dispest0, invSIGMA0, SIGMA0,
+                        Bi, B, q_split,
+                        Jfixed,Jraneff)
+    sd_aGH <-  get_sd_aGH(RespLog=Jloglike, long.data, idVar, 
+                          fixedest0, dispest0, invSIGMA0,Bi, B,
+                          Jfixed, Jraneff,  
+                          ghsize=ghsize, Silent=T, epsilon=10^{-6}, 
+                          parallel=TRUE)
+    fixedSD=list(HL=sd_HL, aGH=sd_aGH)
+    cat("done.\n")
+  } else if(sd.method=="None") {
+    fixedSD <- NULL
+  }
   
-  cat("done.\n")
+
   
+  if(dispersion.SD==TRUE){
+    cat("Start estimating SD for dispersion parameters ...\n ...\n")
+    sd_disp <- get_sd_dipsersion(RespLog=Jloglike, long.data, idVar,
+                                 fixedest0, dispest0, invSIGMA0,SIGMA0, Lval0,
+                                 Bi, B, q_split,
+                                 Jfixed, Jraneff, Jdisp)
+    cat("done.\n")
+  } else sd_disp <- NULL
   #### AIC
   AIC <- 2*length(c(fixedest0, dispest0, Lval0)) -2*loglike_value0
   BIC <- length(c(fixedest0, dispest0, Lval0))*log(nrow(B))-2*loglike_value0
   
   list(fixedest = fixedest0,
-       fixedSD = sd_output,
+       fixedSD  = fixedSD,
+       dispersion = dispest0,
+       dispSD=sd_disp,
        Bi = Bi, 
        B = B,
-       SIGMA = solve(invSIGMA0),
-       invSIGMA=invSIGMA0,
-       dispersion = dispest0,
+       SIGMA = solve(invSIGMA0), 
        convergence = convergence==0,
        loglike_value = loglike_value0,
        AIC=AIC,
-       BIC=BIC
-       #long.data = long.data,
+       BIC=BIC,
+       long.data = long.data,
        #surv.data = surv.data,
-       #RespLog = RespLog,
-       #idVar = idVar, uniqueID = uniqueID,
-       #Jraneff = Jraneff
+       RespLog = Jloglike,Jfixed=Jfixed, Jraneff = Jraneff,
+       idVar = idVar, uniqueID = uniqueID
   )
 }

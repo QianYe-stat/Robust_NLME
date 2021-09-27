@@ -10,7 +10,12 @@ get_Hessian <- function(loglik, pars){
   for(i in 1:q){
     for(j in 1:q){
       k <- (i-1)*q+j
-      result[[k]] <- Deriv(Deriv(loglik, pars[i]), pars[j]) 
+      Fst <- Deriv(loglik, pars[i])
+      if(suppressWarnings(str_detect(Fst, "as.matrix"))) {
+        Fst <- suppressWarnings(str_remove(Fst, "as.matrix"))
+        Fst <- parse(text=Fst)
+      }
+      result[[k]] <- Deriv(Fst, pars[j]) 
       names(result)[k] <- paste(pars[i], pars[j],sep=",")
     }
   }

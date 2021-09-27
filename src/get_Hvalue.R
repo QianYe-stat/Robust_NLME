@@ -1,6 +1,6 @@
 # evaluate a matrix 
 
-get_Hvalue <- function(mat,dim, data=NULL, par.val=NULL, raneff.val=NULL){
+get_Hvalue <- function(mat, dim, data=NULL, par.val=NULL, raneff.val=NULL){
   D <- matrix(0, dim, dim)
   for(i in 1:dim){
     for(j in 1:dim){
@@ -8,11 +8,10 @@ get_Hvalue <- function(mat,dim, data=NULL, par.val=NULL, raneff.val=NULL){
       Di <- with(data, with(par.val, with(raneff.val,  
                                           eval(parse(text=mat[[kk]])))))
       
+      if(length(Di)==1) Di <- Di*nrow(raneff.val)
       D[i,j] <- sum(Di)
     }
   }
   
   return(D)
 }
- 
- 
