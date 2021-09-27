@@ -1,3 +1,7 @@
+##########################################
+# The real data set contains cd4 data
+# the model for sigma contains both time and cd4
+#########################################
 library(nlme)
 library(tidyverse)
 library(Deriv)

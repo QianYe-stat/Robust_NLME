@@ -1,3 +1,7 @@
+##########################################
+# The real data set contains no cd4 data
+#########################################
+
 library(nlme)
 library(tidyverse)
 library(Deriv)
@@ -11,6 +15,9 @@ library(ggpubr)
 library(matrixcalc)
 library(lbfgs)
 library(Matrix)
+
+
+
 rm(list=ls())
 ########################## source all functions  
 (file.sources = list.files(path=here::here("src"),pattern="*.R$"))
