@@ -10,15 +10,11 @@ library(tibble)
 library(ggpubr)
 
 rm(list=ls())
-<<<<<<< HEAD:applications/sim_rob_LME_normal.r
+
 rep <- 200
 n <- 100
 ni <- 15
-=======
-rep <- 50
-n <- 200
-ni <- 10
->>>>>>> main:src/simulation1.r
+
 N <- n*ni
 ti <- seq(0, 1, length.out=ni)
 
