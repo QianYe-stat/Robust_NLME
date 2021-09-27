@@ -1,8 +1,26 @@
+<<<<<<< HEAD:applications/sim_rob_LME.r
 
 rm(list=ls())
 rep <- 200
 n <- 100
 ni <- 15
+=======
+library(nlme)
+library(tidyverse)
+library(Deriv)
+library(stringr)
+library(LaplacesDemon)
+library(purrr)
+library(MASS)
+library(mvtnorm)
+library(tibble)
+library(ggpubr)
+library(Matrix)
+rm(list=ls())
+rep <- 50
+n <- 100
+ni <- 10
+>>>>>>> main:src/simulation2.r
 N <- n*ni
 ti <- seq(0, 1, length.out=ni)
 
@@ -11,9 +29,13 @@ day <- rep(ti, n)
 
 uniqueID <- seq(1:n)
 
+<<<<<<< HEAD:applications/sim_rob_LME.r
 beta <- c(6.0, -2.5)  
 d <- c(0.42, 0.13)
 Mat <- matrix(c(1,0.5, 0.5, 1), ncol=2)
+=======
+Mat <- matrix(c(1,0.1, 0.1, 0.1, 1, 0.1, 0.1, 0.1, 1), ncol=3)
+>>>>>>> main:src/simulation2.r
 
 alpha0 <- log(0.02)
 alpha1 <-  3.4
@@ -70,6 +92,15 @@ set.seed(123)
 
 beta.est.n <- beta.sd.n <- disp.est.n <- beta.COV.n <- beta.SqErr.n <- disp.SqErr.n <- c()
 beta.est <- beta.sd <- disp.est <- beta.COV <- beta.SqErr<- disp.SqErr <- c()
+<<<<<<< HEAD:applications/sim_rob_LME.r
+=======
+dat <- NULL 
+## generate CD4
+ai_cd <- rep(rnorm(n=n, sd=0.4), each=ni)
+error_cd <- rnorm(N, sd=0.2)
+cd4 <- 5.2+1.6*day-1.2*day^2+ai_cd+error_cd
+
+>>>>>>> main:src/simulation2.r
 
 for(k in 1:rep){
   cat("This is run", k, "\n")
@@ -80,6 +111,10 @@ for(k in 1:rep){
   
   while(class(nlme.fit)=="try-error" | convg==FALSE|class(Rnlme.fit)=="try-error"){
     ##########################  simulate data set
+<<<<<<< HEAD:applications/sim_rob_LME.r
+=======
+
+>>>>>>> main:src/simulation2.r
     
     ## generate random effects
     temp <- rchisq(n, df=ndf)
@@ -113,8 +148,13 @@ for(k in 1:rep){
     
     ########################## run nlme model
     simdat1 <- groupedData(lgcopy~day|patid, data=simdat)
+<<<<<<< HEAD:applications/sim_rob_LME.r
     nf <-  function(p1,p2, t) p1+p2*t
     nlme.fit <- try(nlme(lgcopy~nf(p1,p2, day),fixed = p1+p2 ~1,random = p1+p2 ~1,
+=======
+    nf <- function(p1,p2,p3,p4, t, cd) p1+p2*exp(-(p4+p3*cd)*t)
+    nlme.fit <- try(nlme(lgcopy~nf(p1,p2,p3,p4, day, cd4),fixed = p1+p2+p3+p4 ~1,random = p1+p2+p4 ~1,
+>>>>>>> main:src/simulation2.r
                          data =simdat1,start=c(beta)))
     
     if(class(nlme.fit)!="try-error") {
@@ -162,7 +202,11 @@ for(k in 1:rep){
   beta.lower <- Rnlme.fit$fixedest-1.96*Rnlme.fit$fixedSD
   beta.upper <- Rnlme.fit$fixedest+1.96*Rnlme.fit$fixedSD
   beta.cover <- (beta.lower<=beta) & (beta<=beta.upper)
+<<<<<<< HEAD:applications/sim_rob_LME.r
 
+=======
+  cat("\n", beta.cover, "\n")
+>>>>>>> main:src/simulation2.r
   
   beta.est <- rbind(beta.est, Rnlme.fit$fixedest)
   beta.sd <- rbind(beta.sd, Rnlme.fit$fixedSD)
@@ -243,6 +287,7 @@ xtable(cbind(Rob_LME_aGH_RnlmeRes$fixed[,"EST"],
              Rob_LME_aGH_nlmeRes$fixed[,"Coverage"]
 ), type = "latex",digits = 3)
 
+<<<<<<< HEAD:applications/sim_rob_LME.r
 xtable(cbind(Rob_LME_aGH_RnlmeRes$dispersion[,"EST.disp"],
              Rob_LME_aGH_RnlmeRes$dispersion[,"BIAS.disp"],
              Rob_LME_aGH_RnlmeRes$dispersion[,"MSE.disp"], 
@@ -252,3 +297,5 @@ xtable(cbind(Rob_LME_aGH_RnlmeRes$dispersion[,"EST.disp"],
              Rob_LME_aGH_nlmeRes$dispersion[,"MSE.disp"], 
              Rob_LME_aGH_nlmeRes$dispersion[,"SE.em.disp"]
 ), type = "latex",digits = 3)
+=======
+>>>>>>> main:src/simulation2.r

@@ -3,8 +3,13 @@
 #' @param idVar
 
 
+<<<<<<< HEAD
 Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=FALSE, sdghsize=4,
                   itertol=1e-3, Ptol=1e-2, iterMax=20, Verbose=FALSE){
+=======
+Rnlme <- function(nlmeObject, long.data, idVar, 
+                  itertol=1e-3, Ptol=2e-2, iterMax=20, Verbose=FALSE){
+>>>>>>> main
   #set.seed(123)
   ##################################### settings for nlme model 
   nlmeReturn <- get_nlme_loglike(nlmeObject)
@@ -49,10 +54,14 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=
   convergence <- 1
   M <- 1
   
+<<<<<<< HEAD
   while(!(likDiff <= itertol | (Diff <= Ptol & Diff0 <= Ptol) |  M > iterMax)) {
     Diff0 <- Diff
+=======
+  while(!(likDiff <= itertol | (Diff <= Ptol & Diff0 <= Ptol ) | M > iterMax)) {
+>>>>>>> main
     #################################### estimation
-    
+    Diff0 <- Diff
     cat("############## Iteration:", M, "###############","\n")
     
     # estimate random effects
@@ -141,14 +150,22 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=
     message("Successful convergence. Iteration stops because likDiff <= itertol.")
     convergence <- 0
   }
+<<<<<<< HEAD
   if(Diff0 <= Ptol & Diff <= Ptol){
     message("Successful convergence. Iteration stops because FixedParDiff <= Ptol in consective two iterations.")
     convergence <- 0
   }
+=======
+   if(Diff <= Ptol & Diff0 <= Ptol){
+     message("Successful convergence. Iteration stops because FixedParDiff <= Ptol in two consective iteration.")
+     convergence <- 0
+   }
+>>>>>>> main
   
 
   
   # estimate sd's of parameter estimates  
+<<<<<<< HEAD
   if(sd.method=="HL") {
     cat("Start estimating SD for fixed parameters ...\n ...\n")
     
@@ -158,6 +175,28 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=
                              Jfixed,Jraneff)
     fixedSD <- sd_output
     cat("done.\n")
+=======
+  sd_output <- get_sd(RespLog=Jloglike, long.data,  
+                      fixedest0, dispest0, invSIGMA0=solve(Mat),
+                      Bi, B, q_split,
+                      Jfixed, Jraneff)
+  long.data<- simdat
+  fixedest0 <- Rnlme.fit$fixedest
+  dispest0 <- Rnlme.fit$dispersion
+  Bi <- Rnlme.fit$Bi
+  B <- Rnlme.fit$B
+  q_split <- c(3,1,1)
+  
+  get_sd(RespLog=Jloglike, long.data,  
+         fixedest0, dispest0, invSIGMA0=solve(Mat),
+         Bi, B, q_split,
+         Jfixed, Jraneff)
+  get_sd(RespLog=Jloglike, long.data,  
+         fixedest0, dispest0=list(d1=d[1],d2=d[2],d3=d[3], alpha0=alpha0, alpha1=alpha1), 
+         invSIGMA0=Rnlme.fit$invSIGMA,
+         Bi, B, q_split,
+         Jfixed, Jraneff)
+>>>>>>> main
   
   } else if(sd.method=="aGH"){
     cat("Start estimating SD for fixed parameters ...\n ...\n")
@@ -206,8 +245,14 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=
        dispSD=sd_disp,
        Bi = Bi, 
        B = B,
+<<<<<<< HEAD
        SIGMA = solve(invSIGMA0), 
        
+=======
+       SIGMA = solve(invSIGMA0),
+       invSIGMA=invSIGMA0,
+       dispersion = dispest0,
+>>>>>>> main
        convergence = convergence==0,
        loglike_value = loglike_value0,
        AIC=AIC,
