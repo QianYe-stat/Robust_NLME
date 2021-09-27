@@ -51,7 +51,6 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=
   M <- 1
 
   while(!(likDiff <= itertol | (Diff <= Ptol & Diff0 <= Ptol) |  M > iterMax)) {
-    Diff0 <- Diff
 
     #################################### estimation
     Diff0 <- Diff
