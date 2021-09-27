@@ -16,3 +16,4 @@ get_Hvalue <- function(mat, dim, data=NULL, par.val=NULL, raneff.val=NULL){
   return(D)
 }
 
+

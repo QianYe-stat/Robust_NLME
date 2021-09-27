@@ -3,7 +3,7 @@
 #' @param idVar
 
 
-Rnlme <- function(nlmeObject, long.data, idVar, sd.method, ghsize=4,
+Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=FALSE, sdghsize=4,
                   itertol=1e-3, Ptol=1e-2, iterMax=20, Verbose=FALSE){
   #set.seed(123)
   ##################################### settings for nlme model 
@@ -146,25 +146,31 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method, ghsize=4,
     convergence <- 0
   }
   
-  cat("Start estimating SD for fixed parameters ...\n ...\n")
+
   
   # estimate sd's of parameter estimates  
   if(sd.method=="HL") {
+    cat("Start estimating SD for fixed parameters ...\n ...\n")
+    
     sd_output <- get_sd(RespLog=Jloglike, long.data,  idVar,
                              fixedest0, dispest0, invSIGMA0, SIGMA0,
                              Bi, B, q_split,
                              Jfixed,Jraneff)
     fixedSD <- sd_output
+    cat("done.\n")
   
   } else if(sd.method=="aGH"){
+    cat("Start estimating SD for fixed parameters ...\n ...\n")
     sd_output <- get_sd_aGH(RespLog=Jloglike, long.data, idVar, 
                                         fixedest0, dispest0, invSIGMA0,Bi, B,
                                         Jfixed, Jraneff,  
                                         ghsize=ghsize, Silent=T, epsilon=10^{-6}, 
                                         parallel=TRUE)
     fixedSD <- sd_output
+    cat("done.\n")
    
   } else if(sd.method=="Both"){
+    cat("Start estimating SD for fixed parameters ...\n ...\n")
     sd_HL <- get_sd(RespLog=Jloglike, long.data,  idVar,
                         fixedest0, dispest0, invSIGMA0, SIGMA0,
                         Bi, B, q_split,
@@ -175,19 +181,33 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method, ghsize=4,
                           ghsize=ghsize, Silent=T, epsilon=10^{-6}, 
                           parallel=TRUE)
     fixedSD=list(HL=sd_HL, aGH=sd_aGH)
+    cat("done.\n")
+  } else if(sd.method=="None") {
+    fixedSD <- NULL
   }
-  cat("done.\n")
   
+
+  
+  if(dispersion.SD==TRUE){
+    cat("Start estimating SD for dispersion parameters ...\n ...\n")
+    sd_disp <- get_sd_dipsersion(RespLog=Jloglike, long.data, idVar,
+                                 fixedest0, dispest0, invSIGMA0,SIGMA0, Lval0,
+                                 Bi, B, q_split,
+                                 Jfixed, Jraneff, Jdisp)
+    cat("done.\n")
+  } else sd_disp <- NULL
   #### AIC
   AIC <- 2*length(c(fixedest0, dispest0, Lval0)) -2*loglike_value0
   BIC <- length(c(fixedest0, dispest0, Lval0))*log(nrow(B))-2*loglike_value0
   
   list(fixedest = fixedest0,
        fixedSD  = fixedSD,
+       dispersion = dispest0,
+       dispSD=sd_disp,
        Bi = Bi, 
        B = B,
        SIGMA = solve(invSIGMA0), 
-       dispersion = dispest0,
+       
        convergence = convergence==0,
        loglike_value = loglike_value0,
        AIC=AIC,

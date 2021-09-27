@@ -5,13 +5,16 @@ library(stringr)
 library(LaplacesDemon)
 library(purrr)
 library(MASS)
+
 rm(list=ls())
+#load(here::here("data", "Rnlme_bootstrap.RData"))
 ########################## source all functions  
 (file.sources = list.files(path=here::here("src"),pattern="*.R$"))
 (file.sources <- paste0(here::here("src"), "/", file.sources))
 sapply(file.sources,source)
-
+set.seed(123)
 ########################### data
+
 dat0 <- read.table(here::here("data","s315.txt"), header=TRUE)
 names(dat0)
 
@@ -53,7 +56,7 @@ sigma.fit <- lm(lgsigma~time)
 ########################## Models for ROBUST NLME method: a_i ~ inverse-Chisq
 
 # residual dispersion model:  
-ndf <- 3
+ndf <- 5
 sigmaObject1 <- list(
   model=~1+day+cd4+(1|patid),
   link='log',
@@ -88,13 +91,50 @@ nlmeObject1 <- list(
 get_nlme_loglike(nlmeObject1)
 
 
-out.df5 <- Rnlme(nlmeObject=nlmeObject1, long.data=dat, idVar="patid", sd.method="HL")
-out.df3 <- Rnlme(nlmeObject=nlmeObject1, long.data=dat, idVar="patid", sd.method="HL")
+out.df5 <- Rnlme(nlmeObject=nlmeObject1, long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
+
+# residual dispersion model:  
+ndf <- 3
+sigmaObject1 <- list(
+  model=~1+day+cd4+(1|patid),
+  link='log',
+  ran.dist="inverse-Chi",
+  df=ndf,
+  str.fixed=c(2*log(nlme.fit$sigma), coef(sigma.fit)[2], 0),
+  lower.fixed=NULL,
+  upper.fixed=NULL
+)
+
+# mean structure model:  
+nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
+
+nlmeObject1 <- list(
+  nf = function(p1,p2,p3,t) p1+p2*exp(-p3*t),
+  model= lgcopy ~ nf(p1,p2,p3,day),
+  var=c("day"),
+  fixed = p1+p2+p3 ~1,
+  random = p1+p2+p3 ~1,
+  family='normal', 
+  ran.dist='normal',
+  sigma=sigmaObject1,    # residual dispersion model (include residual random eff)
+  ran.Cov=NULL,  # random effect dispersion model (include random random eff (double random eff))
+  str.fixed=fixef(nlme.fit),  # starting value for fixed effect
+  str.disp=apply(ranef(nlme.fit),2,sd),  # starting value for fixed dispersion of random eff
+  lower.fixed=NULL, # lower bounds for fixed eff
+  upper.fixed=rep(100,3), # upper bounds for fixed eff
+  lower.disp=c(0,0,0), # lower bounds for fixed dispersion of random eff
+  upper.disp=c(Inf,Inf,Inf) # upper bounds for  fixed dispersion of random eff
+)
+
+
+
+out.df3 <- Rnlme(nlmeObject=nlmeObject1, long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
 
 out.df5$fixedest
 out.df5$fixedSD
 out.df5$SIGMA
 out.df5$dispersion
+out.df5$dispSD
 out.df5$AIC
 out.df5$BIC
 out.df5$loglike_value
@@ -105,11 +145,12 @@ out$fixedest
 out$fixedSD
 out$SIGMA
 out$dispersion
+out$dispSD
 out$AIC
 out$BIC
 out$loglike_value
 
-########################## Simulate one data set
+########################## Bootstrapping SE
 group <- dat$patid  # grouping variable, e.g patient ID
 uniqueID <- unique(group)   
 n <- length(uniqueID)  # sample size
@@ -160,7 +201,6 @@ nlmeObject.sim <- list(
 
 ## generate random effects
 ndf <- 3
-set.seed(123)
 beta.est <- disp.est <- c()
 List.Rnlme <- NULL
 
@@ -205,7 +245,7 @@ for(k in 1:rep){
     
     simdat <- simdat %>% arrange(patid, day)
     
-    Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject.sim, long.data=simdat, idVar="patid", sd.method="HL"))
+    Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject.sim, long.data=simdat, idVar="patid"))
     if(class(Rnlme.fit)!="try-error") {
       convg <- Rnlme.fit$convergence
       rBias <- max(c(abs((Rnlme.fit$fixedest-beta)/beta)))
@@ -213,8 +253,8 @@ for(k in 1:rep){
   }
   
   List.Rnlme[[k]] <- Rnlme.fit
-  alpha0.ind <- names(Rnlme.fit$dispersion)=="alpha0"
-  Rnlme.fit$dispersion[alpha0.ind] <- exp(Rnlme.fit$dispersion[alpha0.ind])
+  #alpha0.ind <- names(Rnlme.fit$dispersion)=="alpha0"
+  #Rnlme.fit$dispersion[alpha0.ind] <- exp(Rnlme.fit$dispersion[alpha0.ind])
   beta.est <- rbind(beta.est, Rnlme.fit$fixedest)
   disp.est <- rbind(disp.est, Rnlme.fit$dispersion)
   
@@ -233,8 +273,6 @@ rep-sum(drop.index2)
 
 apply(beta.est[!drop.index2,], 2, sd)
 apply(disp.est[!drop.index2,], 2, sd)
-
-
 
 
 ########################## Models for ROBUST NLME method: a_i ~ N(0,1)
@@ -273,8 +311,8 @@ nlmeObject2 <- list(
 get_nlme_loglike(nlmeObject2)$randisp.df
 
 
-out.nor <- Rnlme(nlmeObject=nlmeObject2, long.data=dat, idVar="patid", sd.method="HL")
- 
+out.nor <- Rnlme(nlmeObject=nlmeObject2, long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
+
 out.nor$fixedest
 out.nor$fixedSD
 out.nor$SIGMA
@@ -331,7 +369,7 @@ nlmeObject.sim <- list(
 
 
 ## generate random effects
-set.seed(123)
+
 beta.est.nor <- disp.est.nor <- c()
 List.Rnlme.nor <- NULL
 
@@ -375,7 +413,7 @@ for(k in 1:rep){
     
     simdat <- simdat %>% arrange(patid, day)
     
-    Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject.sim, long.data=simdat, idVar="patid", sd.method="HL"))
+    Rnlme.fit <- try(Rnlme(nlmeObject=nlmeObject.sim, long.data=simdat, idVar="patid"))
     if(class(Rnlme.fit)!="try-error") {
       convg <- Rnlme.fit$convergence
       rBias <- max(c(abs((Rnlme.fit$fixedest-beta)/beta)))
@@ -383,8 +421,8 @@ for(k in 1:rep){
   }
   
   List.Rnlme.nor[[k]] <- Rnlme.fit
-  alpha0.ind <- names(Rnlme.fit$dispersion)=="alpha0"
-  Rnlme.fit$dispersion[alpha0.ind] <- exp(Rnlme.fit$dispersion[alpha0.ind])
+  #alpha0.ind <- names(Rnlme.fit$dispersion)=="alpha0"
+  #Rnlme.fit$dispersion[alpha0.ind] <- exp(Rnlme.fit$dispersion[alpha0.ind])
   beta.est.nor <- rbind(beta.est.nor, Rnlme.fit$fixedest)
   disp.est.nor <- rbind(disp.est.nor, Rnlme.fit$dispersion)
   
@@ -422,67 +460,69 @@ xtable(cbind(out.df5$fixedest, out.df5$fixedSD,
              summary(nlme.fit)$tTable[,"Std.Error"]
 ), type = "latex",digits = 3)
 xtable(cbind(out.df5$dispersion, 
-             rep(1, length(out.df5$dispersion)),
+             out.df5$dispSD,
              out.df3$dispersion,
-             rep(1, length(out.df3$dispersion)),
+             out.df3$dispSD,
              apply(disp.est, 2, sd),
              apply(disp.est[!drop.index1,], 2, sd),
              apply(disp.est[!drop.index2,], 2, sd),
              out.nor$dispersion,
-             rep(1, length(out.df3$dispersion)),
+             out.nor$dispSD,
              apply(disp.est.nor, 2, sd),
              apply(disp.est.nor[!drop.index1.nor,], 2, sd),
              apply(disp.est.nor[!drop.index2.nor,], 2, sd),
              c(0.507, 0.332, 2.197,nlme.fit$sigma^2,1,1)
 ), type = "latex",digits = 3)
 
+#save.image(here::here("data", "Rnlme_bootstrap.RData"))
+
 ########################## plots: real VS simulated
-plot_ID <- sample(names(ni),3)
-plot_dat <- subset(dat0, patid %in% plot_ID)
-
-
-gg1 <- ggplot(plot_dat, aes(day, lgcopy, group=patid)) +geom_line()+
-  geom_point( shape=1)+  theme(legend.position="bottom")+
-  xlab('time (re-scaled to [0,1])') + 
-  ylab('lgcopy (Viral load in log10 scale)')+
-  xlim(0,1)+
-  ylim(1,8)+
-  labs(title="Real data")
-print(gg1)
-ggsave(here::here("figures", "2.pdf"))
-
-gg2 <- ggplot(simdat, aes(day, lgcopy, group=patid)) +geom_line()+
-  geom_point( shape=1)+  theme(legend.position="bottom")+
-  xlab('time (re-scaled to [0,1])') + 
-  ylab('lgcopy (Viral load in log10 scale)')+
-  xlim(0,1)+
-  ylim(1,8)+
-  labs(title="Simulated data (k=3)")
-print(gg2)
-
-ggarrange(gg1, gg2, ncol=2)
-
-ggsave(here::here("figures", "ex2.pdf"))
-
-
-#### 
-
-plot_dat <- dat %>%  
-  mutate(sim.lgcopy=simdat$lgcopy,
-         patid=as.character(patid))
-
-colors <- c("real" = "black", "simulated" = "blue")
-ggplot(plot_dat, aes(day, lgcopy)) +
-  geom_point(aes(day, sim.lgcopy, color="simulated"))+
-  geom_line(aes(day, lgcopy, color="real"))+
-  geom_line(aes(day, sim.lgcopy, color="simulated"))+
-  geom_point()+ 
-  xlab('time (re-scaled to [0,1])') + 
-  ylab('lgcopy (Viral load in log10 scale)')+
-  xlim(0,1)+
-  ylim(1, 8)+
-  facet_wrap(~patid, ncol=5)+
-  labs(color="Legend")+
-  scale_color_manual(values = colors)
-
-ggsave(here::here("figures", "ex2_byID.pdf"), width=12, height=8)
+# plot_ID <- sample(names(ni),3)
+# plot_dat <- subset(dat0, patid %in% plot_ID)
+# 
+# 
+# gg1 <- ggplot(plot_dat, aes(day, lgcopy, group=patid)) +geom_line()+
+#   geom_point( shape=1)+  theme(legend.position="bottom")+
+#   xlab('time (re-scaled to [0,1])') + 
+#   ylab('lgcopy (Viral load in log10 scale)')+
+#   xlim(0,1)+
+#   ylim(1,8)+
+#   labs(title="Real data")
+# print(gg1)
+# ggsave(here::here("figures", "2.pdf"))
+# 
+# gg2 <- ggplot(simdat, aes(day, lgcopy, group=patid)) +geom_line()+
+#   geom_point( shape=1)+  theme(legend.position="bottom")+
+#   xlab('time (re-scaled to [0,1])') + 
+#   ylab('lgcopy (Viral load in log10 scale)')+
+#   xlim(0,1)+
+#   ylim(1,8)+
+#   labs(title="Simulated data (k=3)")
+# print(gg2)
+# 
+# ggarrange(gg1, gg2, ncol=2)
+# 
+# ggsave(here::here("figures", "ex2.pdf"))
+# 
+# 
+# #### 
+# 
+# plot_dat <- dat %>%  
+#   mutate(sim.lgcopy=simdat$lgcopy,
+#          patid=as.character(patid))
+# 
+# colors <- c("real" = "black", "simulated" = "blue")
+# ggplot(plot_dat, aes(day, lgcopy)) +
+#   geom_point(aes(day, sim.lgcopy, color="simulated"))+
+#   geom_line(aes(day, lgcopy, color="real"))+
+#   geom_line(aes(day, sim.lgcopy, color="simulated"))+
+#   geom_point()+ 
+#   xlab('time (re-scaled to [0,1])') + 
+#   ylab('lgcopy (Viral load in log10 scale)')+
+#   xlim(0,1)+
+#   ylim(1, 8)+
+#   facet_wrap(~patid, ncol=5)+
+#   labs(color="Legend")+
+#   scale_color_manual(values = colors)
+# 
+# ggsave(here::here("figures", "ex2_byID.pdf"), width=12, height=8)
