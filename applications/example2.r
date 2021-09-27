@@ -36,6 +36,8 @@ sub_ID <- names(ni)[ni>=4]
 dat <- subset(dat0, patid %in% sub_ID)
 
 ########################## Models for starting values
+
+## mean strucuture model
 dat1 <- groupedData(lgcopy~day|patid, data=dat)
 plot(dat1)
 nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
@@ -47,6 +49,12 @@ nlme.fit <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1+p2+p3 
                   data =dat1,start=c(start))
 summary(nlme.fit)
  
+## model for CD4
+cd.fit <- lme(cd4~I(day^2)+day, random=~1|patid, data=dat)
+
+cd4.pred <- fitted(cd.fit)
+
+
 
 fitted <- fitted(nlme.fit)
 resid <- dat$lgcopy-fitted
