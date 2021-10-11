@@ -1,6 +1,6 @@
 ##########################################
 # The real data set contains cd4 data
-# the model for sigma contains both cd4 only
+# the model for sigma contains cd4 only
 #########################################
 library(nlme)
 library(tidyverse)
