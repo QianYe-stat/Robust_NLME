@@ -94,7 +94,7 @@ get_nlme_loglike <- function(nlmeObject){
   disp.eff <- paste0(disp, rep("*", p), paste0("exp(0.5*", randisp, ")"))
   toteff <- paste0(fixed, rep("+", p), paste0(raneff, rep("*",p), disp.eff)) 
   
-  mu <- paste0("nf(", paste0(toteff, collapse = ","),"," ,paste0(rvX, collapse = ","), ")")
+  mu <- paste0(nlmeObject$nf,"(", paste0(toteff, collapse = ","),"," ,paste0(rvX, collapse = ","), ")")
   
   if (nlmeObject$family=="normal"){ 
     
