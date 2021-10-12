@@ -23,13 +23,13 @@ get_info_sigma<- function(sigmaObject){
   q <- length(rvZ) # dimension of random effects
   
   if(p>0){
-    fixed <- paste("alpha", 0:(p-1), sep="") # name fixed pars
+    fixed <- paste(sigmaObject$fixName, 0:(p-1), sep="") # name fixed pars
   } else {fixed=NULL}
   
   
   if(q>0){
     
-    raneff <- paste("a", 0:(q-1), sep="")  # name random effects
+    raneff <- paste(sigmaObject$ranName, 0:(q-1), sep="")  # name random effects
     
     if(sigmaObject$ran.dist=="inverse-Chi"){
       df <- sigmaObject$df
@@ -41,12 +41,12 @@ get_info_sigma<- function(sigmaObject){
       
     } else if(sigmaObject$ran.dist=="normal"){
       
-      disp.par <- paste("sigma", 0:(q-1), sep="")
+      disp.par <- paste(sigmaObject$dispName, 0:(q-1), sep="")
       
-      raneff_loglike <- make_loglike_normal(raneff, mean=rep("0",q), sd=rep("1",q) ) 
+      raneff_loglike <- make_loglike_normal(raneff, mean=rep("0",q), sd=rep("1",q) )
       
-      linear_pred <- paste0(c(fixed, paste0(raneff, rep("*",q), disp.par)), rep("*", p+q), 
-                        c(rvX, rvZ), sep="", collapse="+")
+      linear_pred <- paste0(c(fixed, paste0(raneff, rep("*",q), disp.par)), rep("*", p+q),
+                            c(rvX, rvZ), sep="", collapse="+")
       df<- NULL
     } else if(sigmaObject$ran.dist=="stdnormal"){
       
@@ -62,8 +62,7 @@ get_info_sigma<- function(sigmaObject){
     raneff_loglike <- NULL
   }
   
-  
-  
+
   if(sigmaObject$link=="log"){
     sigma_expr <- paste0("exp(", linear_pred, ")")
   }

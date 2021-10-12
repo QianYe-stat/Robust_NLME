@@ -3,13 +3,16 @@ get_nlme_loglike <- function(nlmeObject){
   ############## Return from get_info_sigma #####################
   if(is.null(nlmeObject$sigma$model)){
     sigma.raneff <- NULL  # random effect in residual dispersion (residual random effects)
-    sigma.fixed <- "sigma"
+    sigma.fixed <- nlmeObject$sigma$parName
     sigma.loglike <- NULL
-    sigma.str <- nlmeObject$sigma$str.val
-    sigma.lower <- nlmeObject$sigma$lower
-    sigma.upper <- nlmeObject$sigma$upper
+    sigma.str <- nlmeObject$sigma$str.fixed
+    sigma.lower <- nlmeObject$sigma$lower.fixed
+    sigma.upper <- nlmeObject$sigma$upper.fixed
     sigma.df <- NULL
-    sigmaExpr <- "(sigma^2)"
+    sigmaExpr <- paste0("(",nlmeObject$sigma$parName, "^2)" )
+    
+    if(is.null(sigma.lower)) sigma.lower <- 0
+    if(is.null(sigma.upper)) sigma.upper <- Inf
     
   } else {
   sigmaInfo <- get_info_sigma(nlmeObject$sigma)
@@ -53,7 +56,7 @@ get_nlme_loglike <- function(nlmeObject){
   }
   
   if(p>0){
-    fixed <- paste0("beta", 1:p) # name fixed pars
+    fixed <- paste0(nlmeObject$fixName, 1:p) # name fixed pars
   } else {fixed=NULL}
   
   if(q>0){
@@ -64,8 +67,8 @@ get_nlme_loglike <- function(nlmeObject){
     for(i in 1:p){
       sub <- ran.ind[i]
       if(sub!=0){
-        raneff <- c(raneff,paste0("u", sub)) # name random effects
-        disp <- c(disp, paste0("d", sub))    # name the fixed dispersion of random eff
+        raneff <- c(raneff,paste0(nlmeObject$ranName, sub)) # name random effects
+        disp <- c(disp, paste0(nlmeObject$dispName, sub))    # name the fixed dispersion of random eff
       } else {
         raneff <- c(raneff, 0)
         disp <- c(disp, 0)
@@ -75,7 +78,7 @@ get_nlme_loglike <- function(nlmeObject){
       if(!is.null(ranCovObject)){
         sub <- randisp.ind[i]
         if(sub!=0){
-          randisp <- c(randisp, paste0("b", sub)) # name the random effects for varying dispersion of random effect
+          randisp <- c(randisp, paste0(ranCovObject$ranName, sub)) # name the random effects for varying dispersion of random effect
         } else {                                  # double random effects
           randisp <- c(randisp, 0)
         }
@@ -118,9 +121,14 @@ get_nlme_loglike <- function(nlmeObject){
   str.disp <- c(nlmeObject$str.disp, sigma.str)
   names(str.disp) <- c(disp,sigma.fixed)
   
+  if(q==1){
+    ran.loglike <- make_loglike_normal(raneff, mean=rep("0",q), sd=rep("1",q) )
+  }
+
+  if(q>1){
   V.raneff <- paste0("c(", paste0(raneff, collapse = ","), ")")
   ran.loglike <- paste0("-0.5*",V.raneff, "%*%invSIGMA%*%", V.raneff,"+0.5*log(det(invSIGMA))-0.5*", q,"*log(2*pi)")
-
+  }
   #####
   if(is.null(nlmeObject$lower.disp))  nlmeObject$lower.disp <- rep(0, q)
   if(is.null(nlmeObject$upper.disp))  nlmeObject$upper.disp <- rep(Inf, q)
