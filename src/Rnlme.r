@@ -3,38 +3,36 @@
 #' @param idVar
 
 
-Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=FALSE, sdghsize=4,
+Rnlme <- function(nlmeObjects, long.data, idVar, sd.method="None", dispersion.SD=FALSE, sdghsize=4,
                   itertol=1e-3, Ptol=1e-2, iterMax=20, Verbose=FALSE){
 
   #set.seed(123)
   ##################################### settings for nlme model 
-  nlmeReturn <- get_nlme_loglike(nlmeObject)
+  JReturn <- get_Jloglike(nlmeObjects)
   
-  Jloglike <- nlmeReturn$loglike # log likelihood conditional on random effects
-  Jraneff <- nlmeReturn$ran.eff # random effects 
-  Jfixed  <-  nlmeReturn$fixed.par   # fixed parameters 
-  Jdisp   <-  nlmeReturn$disp.par  # dispersion parameters
-  nf <- nlmeReturn$nf
+  Jloglike <- JReturn$Jloglike # log likelihood conditional on random effects
+  
+  Jfixed  <-  JReturn$Jfixed   # fixed parameters
+  Jraneff <- JReturn$Jraneff # random effects 
+  Jdisp   <-  JReturn$Jdisp # dispersion parameters
+   
   
   p <- length(Jfixed)  #  dimension of fixed parameters 
   q <- length(Jraneff) # dimension of random effects
-  q_split <-  nlmeReturn$ran.eff.dim
-  qSIGMA <- nlmeReturn$SIGMA.dim # dimension of SIGMA
-  
-  df.sigma <- nlmeReturn$sigma.df
-  df.randisp <- nlmeReturn$randisp.df
+  qSIGMA <- JReturn$SIGMA.dim # dimension of SIGMA
   
   ##################################### initial values
-  fixedest0 <- nlmeReturn$str.fixed
-  dispest0 <- nlmeReturn$str.disp
+  fixedest0 <- JReturn$str.fixed
+  dispest0 <- JReturn$str.disp
+  
   invSIGMA0 <- SIGMA <- diag(1,qSIGMA,qSIGMA)
   Lval0 <- NULL # re-parameters for COV matrix
   
   #################################### bounds
-  lower.fixed <- nlmeReturn$lower.fixed
-  upper.fixed <- nlmeReturn$upper.fixed
-  lower.disp <- nlmeReturn$lower.disp
-  upper.disp <- nlmeReturn$upper.disp
+  lower.fixed <- JReturn$lower.fixed
+  upper.fixed <- JReturn$upper.fixed
+  lower.disp <- JReturn$lower.disp
+  upper.disp <- JReturn$upper.disp
   
   
   #################################### settings for dataset
@@ -158,7 +156,7 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=
     
     sd_output <- get_sd(RespLog=Jloglike, long.data,  idVar,
                              fixedest0, dispest0, invSIGMA0, SIGMA0,
-                             Bi, B, q_split,
+                             Bi, B,
                              Jfixed,Jraneff)
     fixedSD <- sd_output
     cat("done.\n")
@@ -177,7 +175,7 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=
     cat("Start estimating SD for fixed parameters ...\n ...\n")
     sd_HL <- get_sd(RespLog=Jloglike, long.data,  idVar,
                         fixedest0, dispest0, invSIGMA0, SIGMA0,
-                        Bi, B, q_split,
+                        Bi, B,
                         Jfixed,Jraneff)
     sd_aGH <-  get_sd_aGH(RespLog=Jloglike, long.data, idVar, 
                           fixedest0, dispest0, invSIGMA0,Bi, B,
@@ -196,7 +194,7 @@ Rnlme <- function(nlmeObject, long.data, idVar, sd.method="None", dispersion.SD=
     cat("Start estimating SD for dispersion parameters ...\n ...\n")
     sd_disp <- get_sd_dipsersion(RespLog=Jloglike, long.data, idVar,
                                  fixedest0, dispest0, invSIGMA0,SIGMA0, Lval0,
-                                 Bi, B, q_split,
+                                 Bi, B,
                                  Jfixed, Jraneff, Jdisp)
     cat("done.\n")
   } else sd_disp <- NULL

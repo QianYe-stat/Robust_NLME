@@ -1,6 +1,6 @@
 get_sd <- function(RespLog, long.data, idVar,
                    fixedest0, dispest0, invSIGMA0,SIGMA0,
-                   Bi, B, q_split,
+                   Bi, B,
                    Jfixed, Jraneff){
   
   Yrandisp <- !is.null(RespLog$randisp.loglike)
@@ -8,7 +8,7 @@ get_sd <- function(RespLog, long.data, idVar,
   
   p <- length(Jfixed)
   q <- length(Jraneff)
-  q1 <- q_split[1]
+  #q1 <- q_split[1]
   n <- nrow(Bi)
 
   pars <- c(Jfixed, Jraneff)
@@ -17,7 +17,7 @@ get_sd <- function(RespLog, long.data, idVar,
   Hmat.mu <- get_Hessian(RespLog$mu.loglike, pars)
   if(Ysigma) Hmat.sigma <- get_Hessian(RespLog$sigma.loglike, pars)
   if(Yrandisp) Hmat.randisp <- get_Hessian(RespLog$randisp.loglike, pars)
-  # Hmat.ran <- get_Hessian(RespLog$ran.loglike, pars)
+  Hmat.ran <- get_Hessian(RespLog$ran.loglike, pars)
 
   
   par.val <- as.list(c(fixedest0, dispest0))
@@ -35,8 +35,8 @@ get_sd <- function(RespLog, long.data, idVar,
     randisp.val <- get_Hvalue(Hmat.randisp, p+q, data=NULL, par.val, Bi)
   } else randisp.val <- diag(0, p+q, p+q)
   
-  ran.val <- bdiag(diag(0, p,p), -invSIGMA0*(n), diag(0, (q-q1),(q-q1)))
-  
+  #ran.val <- bdiag(diag(0, p,p), -invSIGMA0*(n), diag(0, (q-q1),(q-q1)))
+  ran.val <- get_Hvalue(Hmat.ran, p+q, data=NULL, par.val, Bi)
   
   Hval <-  as.matrix(-(mu.val+sigma.val+randisp.val+ran.val))
   

@@ -97,6 +97,14 @@ get_info_sigma<- function(sigmaObject){
   upper.fixed <- c(upper.fixed, upper.disp)
   }
   
+  trueVal.model <- sigmaObject$trueVal.model
+  if(!is.null(trueVal.model)){
+    model<- trueVal.model$model
+    true.expr <- get_mu(model)
+    
+    sigma_expr <- str_replace_all(sigma_expr, trueVal.model$var , paste0("(", true.expr , ")"))
+  }
+  
   return(list(sigmaExpr=sigma_expr, loglike=raneff_loglike, raneff=raneff, fixed=fixed, 
               df=df,str.val=str.fixed,lower=lower.fixed, upper=upper.fixed))
 }

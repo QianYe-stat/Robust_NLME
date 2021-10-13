@@ -1,6 +1,6 @@
 get_sd_dipsersion <- function(RespLog, long.data, idVar,
                    fixedest0, dispest0, invSIGMA0,SIGMA0, Lval0,
-                   Bi, B, q_split,
+                   Bi, B,
                    Jfixed, Jraneff, Jdisp){
   
   Yrandisp <- !is.null(RespLog$randisp.loglike)

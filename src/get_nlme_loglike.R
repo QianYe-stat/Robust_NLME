@@ -1,3 +1,78 @@
+get_mu <- function(nlmeObject){
+  ranCovObject <- nlmeObject$ranCovObject
+  
+  resp <- strsplit(as.character(nlmeObject$model), "~",  fixed=T)[[2]]
+  resp <- str_trim(resp)
+  
+  rvX <- nlmeObject$var
+  rvX <- str_trim(rvX)
+  
+  sp.fix <- strsplit(as.character(nlmeObject$fixed), "~",  fixed=T)[[2]]
+  fix.comp <- strsplit(sp.fix, "+",  fixed=T)[[1]]
+  fix.comp <- str_trim(fix.comp)
+  
+  sp.ran <- strsplit(as.character(nlmeObject$random), "~",  fixed=T)[[2]]
+  ran.comp <- strsplit(sp.ran, "+",  fixed=T)[[1]]
+  ran.comp <- str_trim(ran.comp)
+  
+  p <- length(fix.comp)  # dimension of fixed pars
+  q <- length(ran.comp)  # dimension of random eff
+  
+  ran.ind <- c(1:p) * fix.comp %in% ran.comp
+  
+  if(!is.null(ranCovObject)){
+    sp <- strsplit(as.character(ranCovObject$varying.disp), "~",  fixed=T)[[2]]
+    randisp.comp <- strsplit(sp, "+",  fixed=T)[[1]]
+    randisp.comp <- str_trim(randisp.comp) 
+    randisp.ind <- c(1:p) * fix.comp %in% randisp.comp  # identify the random effects with varying dispersion
+  }
+  
+  if(p>0){
+    fixed <- paste0(nlmeObject$fixName, 1:p) # name fixed pars
+  } else {fixed=NULL}
+  
+  if(q>0){
+    raneff <- c()
+    disp <- c()
+    randisp <- c()
+    
+    for(i in 1:p){
+      sub <- ran.ind[i]
+      if(sub!=0){
+        raneff <- c(raneff,paste0(nlmeObject$ranName, sub)) # name random effects
+        disp <- c(disp, paste0(nlmeObject$dispName, sub))    # name the fixed dispersion of random eff
+      } else {
+        raneff <- c(raneff, 0)
+        disp <- c(disp, 0)
+      }
+      
+      rm(sub)
+      if(!is.null(ranCovObject)){
+        sub <- randisp.ind[i]
+        if(sub!=0){
+          randisp <- c(randisp, paste0(ranCovObject$ranName, sub)) # name the random effects for varying dispersion of random effect
+        } else {                                  # double random effects
+          randisp <- c(randisp, 0)
+        }
+      } else {
+        randisp <- rep(0,q)
+      }
+    }
+  } else {
+    raneff=NULL
+    disp=NULL
+    randisp=NULL}
+  
+  disp.eff <- paste0(disp, rep("*", p), paste0("exp(0.5*", randisp, ")"))
+  toteff <- paste0(fixed, rep("+", p), paste0(raneff, rep("*",p), disp.eff)) 
+  
+  mu <- paste0(nlmeObject$nf,"(", paste0(toteff, collapse = ","),"," ,paste0(rvX, collapse = ","), ")")
+  
+  return(mu)
+  
+}
+
+
 get_nlme_loglike <- function(nlmeObject){
   
   ############## Return from get_info_sigma #####################
@@ -157,7 +232,8 @@ get_nlme_loglike <- function(nlmeObject){
               SIGMA.dim=q,
               ran.eff.dim=c(length(raneff),length(sigma.raneff), length(randisp)),
               sigma.df=sigma.df, randisp.df=ranCovObject$df,
-              nf=nlmeObject$nf))
+              nf=nlmeObject$nf,
+              muExpr=mu))
   } else {
     loglike <- list(mu.loglike=mu.loglike, sigma.loglike=sigma.loglike, 
                     ran.loglike=ran.loglike)
@@ -171,7 +247,8 @@ get_nlme_loglike <- function(nlmeObject){
                 SIGMA.dim=q,
                 ran.eff.dim=c(length(raneff),length(sigma.raneff)),
                 sigma.df=sigma.df,
-                nf=nlmeObject$nf))
+                nf=nlmeObject$nf,
+                muExpr=mu))
   }
   
   
