@@ -40,8 +40,17 @@ make_strMat <- function(q2){
                    ", byrow=TRUE)") 
   
   Mpar <- unique(Mpar)
+  Mp <- length(Mpar)
+  
+  dM <- array(NA, dim=c(q2,q2,Mp))
+  
+  for(i in 1:Mp){
+    ttz <- unlist(lapply(M, function(x){Deriv(x, Mpar[i])}))
+    dM[,,i] <- matrix(as.character(ttz),q2,q2)
+  }
+  
 
 
-  return(list(M=M.expr, Mpar=Mpar))
+  return(list(M=M.expr, Mpar=Mpar, dM=dM))
   
 }

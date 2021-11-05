@@ -1,4 +1,4 @@
-est_dispersion <- function(RespLog, long.data, Jdisp,
+est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
                            fixedest, dispest0, invSIGMA0, Lval0,
                            Bi, B,
                            lower, upper,
@@ -115,7 +115,7 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
     } else {
       str_val00 <- dispest0
       convge = -1
-
+      
     }
     M <- M+1
     if(Verbose==TRUE){ 
@@ -143,8 +143,3 @@ est_dispersion <- function(RespLog, long.data, Jdisp,
   
   return(list(disp=output, invSIGMA=invSIGMAest, Lval=Lval, SIGMA=SIGMAest))
 }
-
-
-
-
-

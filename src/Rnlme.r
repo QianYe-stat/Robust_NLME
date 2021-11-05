@@ -25,7 +25,7 @@ Rnlme <- function(nlmeObjects, long.data, idVar, sd.method="None", dispersion.SD
   fixedest0 <- JReturn$str.fixed
   dispest0 <- JReturn$str.disp
   
-  invSIGMA0 <- SIGMA <- diag(1,qSIGMA,qSIGMA)
+  invSIGMA0 <- SIGMA0 <- diag(1,qSIGMA,qSIGMA)
   Lval0 <- NULL # re-parameters for COV matrix
   
   #################################### bounds
@@ -77,7 +77,7 @@ Rnlme <- function(nlmeObjects, long.data, idVar, sd.method="None", dispersion.SD
     
     # estimate dispersion parameters
     cat("Start estimating dispersion parameters ... \n")
-    disp.output <- est_dispersion(RespLog=Jloglike, long.data, Jdisp,
+    disp.output <- est_disp_ml(RespLog=Jloglike, long.data, Jdisp, Jfixed, Jraneff,
                                   fixedest, dispest0, invSIGMA0, Lval0,
                                   Bi, B,
                                   lower=lower.disp, upper=upper.disp,

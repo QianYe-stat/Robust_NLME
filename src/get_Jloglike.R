@@ -4,7 +4,7 @@ get_Jloglike <- function(nlmeObjects){
   
   mu.loglike <- sigma.loglike <- ran.loglike <-  vector("list",k)
   
-  Jfixed <- Jraneff <- Jdisp <- parSIGMA <- str.fixed <- str.disp <- lower.fixed <- lower.disp <- upper.fixed <- upper.disp <- c()
+  Jfixed  <- Jdisp <- parSIGMA <- parNSIG <- str.fixed <- str.disp <- lower.fixed <- lower.disp <- upper.fixed <- upper.disp <- c()
   
   for(i in 1:k){
     nlmeOjbect_i <- nlmeObjects[[i]]
@@ -18,10 +18,11 @@ get_Jloglike <- function(nlmeObjects){
     ran.loglike[i] <- lik$ran.loglike
     
     Jfixed <- c(Jfixed, nlmeReturn$fixed.par)
-    Jraneff <- c(Jraneff, nlmeReturn$ran.eff)
+    #Jraneff <- c(Jraneff, nlmeReturn$ran.eff)
     Jdisp <- c(Jdisp, nlmeReturn$disp.par)
     
     parSIGMA <- c(parSIGMA, nlmeReturn$ran.eff[1:nlmeReturn$SIGMA.dim])
+    parNSIG <- c(parNSIG, nlmeReturn$ran.eff[-(1:nlmeReturn$SIGMA.dim)])
     
     str.fixed <- c(str.fixed, nlmeReturn$str.fixed)
     str.disp <- c(str.disp,nlmeReturn$str.disp)
@@ -33,6 +34,7 @@ get_Jloglike <- function(nlmeObjects){
     upper.disp <- c(upper.disp,nlmeReturn$upper.disp)
   }
   
+  Jraneff <- c(parSIGMA, parNSIG)
   
   mu.loglike <- paste0("(", unlist(mu.loglike), ")", collapse="+")
   sigma.loglike <- paste0("(", unlist(sigma.loglike), ")", collapse="+")

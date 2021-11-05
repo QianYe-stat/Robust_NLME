@@ -196,14 +196,14 @@ get_nlme_loglike <- function(nlmeObject){
   str.disp <- c(nlmeObject$str.disp, sigma.str)
   names(str.disp) <- c(disp,sigma.fixed)
   
-  if(q==1){
-    ran.loglike <- make_loglike_normal(raneff, mean=rep("0",q), sd=rep("1",q) )
-  }
-
-  if(q>1){
-  V.raneff <- paste0("c(", paste0(raneff, collapse = ","), ")")
-  ran.loglike <- paste0("-0.5*",V.raneff, "%*%invSIGMA%*%", V.raneff,"+0.5*log(det(invSIGMA))-0.5*", q,"*log(2*pi)")
-  }
+  # if(q==1){
+  #   ran.loglike <- make_loglike_normal(raneff, mean=rep("0",q), sd=rep("1",q) )
+  # }
+  # 
+  # if(q>1){
+  # V.raneff <- paste0("c(", paste0(raneff, collapse = ","), ")")
+  # ran.loglike <- paste0("-0.5*",V.raneff, "%*%invSIGMA%*%", V.raneff,"+0.5*log(det(invSIGMA))-0.5*", q,"*log(2*pi)")
+  # }
   #####
   if(is.null(nlmeObject$lower.disp))  nlmeObject$lower.disp <- rep(0, q)
   if(is.null(nlmeObject$upper.disp))  nlmeObject$upper.disp <- rep(Inf, q)
@@ -221,7 +221,7 @@ get_nlme_loglike <- function(nlmeObject){
   
   if(!is.null(ranCovObject)){
     loglike <- list(mu.loglike=mu.loglike, sigma.loglike=sigma.loglike, 
-                 randisp.loglike=randisp.loglike,ran.loglike=ran.loglike)
+                 randisp.loglike=randisp.loglike)
     return(list(loglike=loglike,
               fixed.par=fixed, ran.eff=c(raneff,sigma.raneff, randisp), disp.par=c(disp,sigma.fixed),
               str.fixed=str.fixed, str.disp=str.disp,
@@ -235,8 +235,7 @@ get_nlme_loglike <- function(nlmeObject){
               nf=nlmeObject$nf,
               muExpr=mu))
   } else {
-    loglike <- list(mu.loglike=mu.loglike, sigma.loglike=sigma.loglike, 
-                    ran.loglike=ran.loglike)
+    loglike <- list(mu.loglike=mu.loglike, sigma.loglike=sigma.loglike)
     return(list(loglike=loglike,
                 fixed.par=fixed, ran.eff=c(raneff,sigma.raneff), disp.par=c(disp,sigma.fixed),
                 str.fixed=str.fixed, str.disp=str.disp,
