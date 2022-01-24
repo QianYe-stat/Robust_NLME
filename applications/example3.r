@@ -64,20 +64,27 @@ sigmaObject2 <- list(
   ran.dist="stdnormal",
   str.fixed=c(2*log(nlme.fit$sigma), 0),
   lower.fixed=NULL,
-  upper.fixed=NULL
+  upper.fixed=NULL,
+  fixName="alpha",
+  ranName="a"
 )
+
+
 
 # mean structure model:  
 nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
 
 nlmeObject2 <- list(
-  nf = function(p1,p2,p3,t) p1+p2*exp(-p3*t),
+  nf = "nf",
   model= lgcopy ~ nf(p1,p2,p3,day),
   var=c("day"),
   fixed = p1+p2+p3 ~1,
   random = p1+p2+p3 ~1,
   family='normal', 
   ran.dist='normal',
+  fixName="beta",
+  ranName="u",
+  dispName="d",
   sigma=sigmaObject2,    # residual dispersion model (include residual random eff)
   ran.Cov=NULL,  # random effect dispersion model (include random random eff (double random eff))
   str.fixed=fixef(nlme.fit),  # starting value for fixed effect
@@ -88,10 +95,14 @@ nlmeObject2 <- list(
   upper.disp=c(Inf,Inf,Inf) # upper bounds for  fixed dispersion of random eff
 )
 
+
+
 get_nlme_loglike(nlmeObject2)
 
+# reml
+out.nor <- Rnlme(nlmeObjects=list(nlmeObject2), long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
 
-out.nor <- Rnlme(nlmeObject=nlmeObject2, long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
+out.nor1 <- Rnlme(nlmeObjects=list(nlmeObject2), long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
 
 out.nor$fixedest
 out.nor$fixedSD

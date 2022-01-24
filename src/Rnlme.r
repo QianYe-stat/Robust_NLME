@@ -4,7 +4,7 @@
 
 
 Rnlme <- function(nlmeObjects, long.data, idVar, sd.method="None", dispersion.SD=FALSE, sdghsize=4,
-                  itertol=1e-3, Ptol=1e-2, iterMax=20, Verbose=FALSE){
+                  itertol=1e-3, Ptol=1e-2, iterMax=15, Verbose=FALSE){
 
   #set.seed(123)
   ##################################### settings for nlme model 
@@ -77,7 +77,7 @@ Rnlme <- function(nlmeObjects, long.data, idVar, sd.method="None", dispersion.SD
     
     # estimate dispersion parameters
     cat("Start estimating dispersion parameters ... \n")
-    disp.output <- est_disp_ml(RespLog=Jloglike, long.data, Jdisp, Jfixed, Jraneff,
+    disp.output <- est_disp_reml(RespLog=Jloglike, long.data, Jdisp, Jfixed, Jraneff,
                                   fixedest, dispest0, invSIGMA0, Lval0,
                                   Bi, B,
                                   lower=lower.disp, upper=upper.disp,

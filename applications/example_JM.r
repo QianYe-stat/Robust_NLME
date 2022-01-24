@@ -140,3 +140,8 @@ out$fixedSD
 out$dispersion
 out$dispSD
 
+out.reml <- Rnlme(nlmeObjects=nlmeObjects, long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
+out.reml$fixedest
+out.reml$fixedSD
+out.reml$dispersion
+out.reml$dispSD
