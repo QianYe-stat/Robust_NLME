@@ -177,7 +177,7 @@ est_disp_reml <- function(RespLog, long.data, Jdisp, Jfixed, Jraneff,
   if(Verbose==TRUE) check=1  else check=0
   
   # start iteration
-  while(convge != 0 & M<3){
+  while(convge != 0 & M<1){
     cat("\n", M)
     if(is.null(Lval0)){
       Lval00 <- runif( qL, 0, pi)

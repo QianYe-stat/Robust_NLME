@@ -77,7 +77,7 @@ Rnlme <- function(nlmeObjects, long.data, idVar, sd.method="None", dispersion.SD
     
     # estimate dispersion parameters
     cat("Start estimating dispersion parameters ... \n")
-    disp.output <- est_disp_reml(RespLog=Jloglike, long.data, Jdisp, Jfixed, Jraneff,
+    disp.output <- est_disp_ml(RespLog=Jloglike, long.data, Jdisp, Jfixed, Jraneff,
                                   fixedest, dispest0, invSIGMA0, Lval0,
                                   Bi, B,
                                   lower=lower.disp, upper=upper.disp,

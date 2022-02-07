@@ -1,4 +1,4 @@
-get_mu <- function(nlmeObject){
+get_mu1 <- function(nlmeObject){
   ranCovObject <- nlmeObject$ranCovObject
   
   resp <- strsplit(as.character(nlmeObject$model), "~",  fixed=T)[[2]]
@@ -73,7 +73,7 @@ get_mu <- function(nlmeObject){
 }
 
 
-get_nlme_loglike <- function(nlmeObject){
+get_nlme_loglike1 <- function(nlmeObject){
   
   ############## Return from get_info_sigma #####################
   if(is.null(nlmeObject$sigma$model)){
@@ -90,15 +90,15 @@ get_nlme_loglike <- function(nlmeObject){
     if(is.null(sigma.upper)) sigma.upper <- Inf
     
   } else {
-    sigmaInfo <- get_info_sigma(nlmeObject$sigma)
-    sigma.raneff <- sigmaInfo$raneff  # random effect in residual dispersion (residual random effects)
-    sigma.fixed <- sigmaInfo$fixed
-    sigma.loglike <- sigmaInfo$loglike
-    sigma.str <- sigmaInfo$str.val
-    sigma.lower <- sigmaInfo$lower
-    sigma.upper <- sigmaInfo$upper
-    sigma.df <- sigmaInfo$df
-    sigmaExpr <- sigmaInfo$sigmaExpr
+  sigmaInfo <- get_info_sigma(nlmeObject$sigma)
+  sigma.raneff <- sigmaInfo$raneff  # random effect in residual dispersion (residual random effects)
+  sigma.fixed <- sigmaInfo$fixed
+  sigma.loglike <- sigmaInfo$loglike
+  sigma.str <- sigmaInfo$str.val
+  sigma.lower <- sigmaInfo$lower
+  sigma.upper <- sigmaInfo$upper
+  sigma.df <- sigmaInfo$df
+  sigmaExpr <- sigmaInfo$sigmaExpr
   }
   
   ranCovObject <- nlmeObject$ran.Cov
@@ -175,7 +175,7 @@ get_nlme_loglike <- function(nlmeObject){
     
     sigma <-  sigmaExpr
     mu.loglike <- paste0("-0.5*(", resp, "-", mu, 
-                         ")^2/",sigma, "-0.5*log(",sigma,")-0.5*log(2*pi)")
+                      ")^2/",sigma, "-0.5*log(",sigma,")-0.5*log(2*pi)")
     
   }
   
@@ -190,19 +190,12 @@ get_nlme_loglike <- function(nlmeObject){
   } 
   
   #####
-  if(is.null(nlmeObject$sigma$model)){
-    str.fixed <- nlmeObject$str.fixed
-    names(str.fixed) <- fixed
-    
-    str.disp <- c(nlmeObject$str.disp, sigma.str)
-    names(str.disp) <- c(disp,sigma.fixed)
-  } else {
-    str.fixed <- c(nlmeObject$str.fixed, sigma.str)
-    names(str.fixed) <- c(fixed, sigma.fixed)
-    
-    str.disp <- nlmeObject$str.disp 
-    names(str.disp) <- disp
-  }
+  str.fixed <- nlmeObject$str.fixed
+  names(str.fixed) <- fixed
+  
+  str.disp <- c(nlmeObject$str.disp, sigma.str)
+  names(str.disp) <- c(disp,sigma.fixed)
+  
   # if(q==1){
   #   ran.loglike <- make_loglike_normal(raneff, mean=rep("0",q), sd=rep("1",q) )
   # }
@@ -212,63 +205,39 @@ get_nlme_loglike <- function(nlmeObject){
   # ran.loglike <- paste0("-0.5*",V.raneff, "%*%invSIGMA%*%", V.raneff,"+0.5*log(det(invSIGMA))-0.5*", q,"*log(2*pi)")
   # }
   #####
+  if(is.null(nlmeObject$lower.disp))  nlmeObject$lower.disp <- rep(0, q)
+  if(is.null(nlmeObject$upper.disp))  nlmeObject$upper.disp <- rep(Inf, q)
   
-  if(is.null(nlmeObject$sigma$model)){
-    if(is.null(nlmeObject$lower.disp))  nlmeObject$lower.disp <- rep(0, q)
-    if(is.null(nlmeObject$upper.disp))  nlmeObject$upper.disp <- rep(Inf, q)
-    
-    lower.disp <- c(nlmeObject$lower.disp, sigma.lower)
-    upper.disp <- c(nlmeObject$upper.disp, sigma.upper)
-    names(lower.disp) <- names(upper.disp) <- c(disp,sigma.fixed)
-    
-    lower.fixed <- nlmeObject$lower.fixed
-    upper.fixed <- nlmeObject$upper.fixed
-    if(is.null(lower.fixed)) lower.fixed <- rep(-Inf, p)
-    if(is.null(upper.fixed)) upper.fixed <- rep(Inf, p)
-    
-    names(lower.fixed) <- names(upper.fixed) <- fixed
-  } else {
-    if(is.null(nlmeObject$lower.disp))  nlmeObject$lower.disp <- rep(0, q)
-    if(is.null(nlmeObject$upper.disp))  nlmeObject$upper.disp <- rep(Inf, q)
-    
-    lower.disp <- nlmeObject$lower.disp
-    upper.disp <- nlmeObject$upper.disp
-    names(lower.disp) <- names(upper.disp) <- disp 
-    
-    if(is.null(nlmeObject$lower.fixed)) nlmeObject$lower.fixed <- rep(-Inf, p)
-    if(is.null(nlmeObject$upper.fixed)) nlmeObject$upper.fixed <- rep(Inf, p)
-    
-    lower.fixed <- c(nlmeObject$lower.fixed, sigma.lower)
-    upper.fixed <- c(nlmeObject$upper.fixed, sigma.upper)
-    
-    names(lower.fixed) <- names(upper.fixed) <- c(fixed, sigma.fixed)
-  }
+  lower.disp <- c(nlmeObject$lower.disp, sigma.lower)
+  upper.disp <- c(nlmeObject$upper.disp, sigma.upper)
+  names(lower.disp) <- names(upper.disp) <- c(disp,sigma.fixed)
   
-  if(is.null(nlmeObject$sigma$model)){
-    disp <- c(disp,sigma.fixed)
-  } else {
-    fixed <- c(fixed, sigma.fixed)
-  }
+  lower.fixed <- nlmeObject$lower.fixed
+  upper.fixed <- nlmeObject$upper.fixed
+  if(is.null(lower.fixed)) lower.fixed <- rep(-Inf, p)
+  if(is.null(upper.fixed)) upper.fixed <- rep(Inf, p)
+  
+  names(lower.fixed) <- names(upper.fixed) <- fixed
   
   if(!is.null(ranCovObject)){
     loglike <- list(mu.loglike=mu.loglike, sigma.loglike=sigma.loglike, 
-                    randisp.loglike=randisp.loglike)
+                 randisp.loglike=randisp.loglike)
     return(list(loglike=loglike,
-                fixed.par=fixed, ran.eff=c(raneff,sigma.raneff, randisp), disp.par=disp,
-                str.fixed=str.fixed, str.disp=str.disp,
-                lower.fixed=lower.fixed, upper.fixed=upper.fixed,
-                lower.disp=lower.disp, upper.disp=upper.disp,
-                response=resp,
-                rvX=rvX,
-                SIGMA.dim=q,
-                ran.eff.dim=c(length(raneff),length(sigma.raneff), length(randisp)),
-                sigma.df=sigma.df, randisp.df=ranCovObject$df,
-                nf=nlmeObject$nf,
-                muExpr=mu))
+              fixed.par=fixed, ran.eff=c(raneff,sigma.raneff, randisp), disp.par=c(disp,sigma.fixed),
+              str.fixed=str.fixed, str.disp=str.disp,
+              lower.fixed=lower.fixed, upper.fixed=upper.fixed,
+              lower.disp=lower.disp, upper.disp=upper.disp,
+              response=resp,
+              rvX=rvX,
+              SIGMA.dim=q,
+              ran.eff.dim=c(length(raneff),length(sigma.raneff), length(randisp)),
+              sigma.df=sigma.df, randisp.df=ranCovObject$df,
+              nf=nlmeObject$nf,
+              muExpr=mu))
   } else {
     loglike <- list(mu.loglike=mu.loglike, sigma.loglike=sigma.loglike)
     return(list(loglike=loglike,
-                fixed.par=fixed, ran.eff=c(raneff,sigma.raneff), disp.par=disp,
+                fixed.par=fixed, ran.eff=c(raneff,sigma.raneff), disp.par=c(disp,sigma.fixed),
                 str.fixed=str.fixed, str.disp=str.disp,
                 lower.fixed=lower.fixed, upper.fixed=upper.fixed,
                 lower.disp=lower.disp, upper.disp=upper.disp,
