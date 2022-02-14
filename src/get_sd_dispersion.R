@@ -6,8 +6,12 @@ get_sd_dipsersion <- function(RespLog, long.data, idVar,
   Yrandisp <- !is.null(RespLog$randisp.loglike)
   Ysigma <- !is.null(RespLog$sigma.loglike)
   n <- nrow(Bi)
+  if(ncol(invSIGMA0)>1) {
+    Lmat  <- make_strMat(ncol(invSIGMA0)) 
+  } else {
+    Lmat <- list(M=matrix(1), Mpar=NULL)
+  }
  
-  Lmat  <- make_strMat(ncol(invSIGMA0)) 
   Lpar <- Lmat$Mpar
   ran.loglike <- str_replace_all(RespLog$ran.loglike, "invSIGMA", paste0("solve(",Lmat$M, ")"))
   
@@ -21,7 +25,7 @@ get_sd_dipsersion <- function(RespLog, long.data, idVar,
   Hmat.mu <- get_Hessian(RespLog$mu.loglike, Jdisp)
   #if(Ysigma) Hmat.sigma <- get_Hessian(RespLog$sigma.loglike, pars)
   #if(Yrandisp) Hmat.randisp <- get_Hessian(RespLog$randisp.loglike, pars)
-  Hmat.ran <- get_Hessian(ran.loglike, Lpar)
+  if(!is.null(Lpar)) Hmat.ran <- get_Hessian(ran.loglike, Lpar)
   
   par.val <- as.list(c(fixedest0, dispest0, Lval0))
   
@@ -30,9 +34,11 @@ get_sd_dipsersion <- function(RespLog, long.data, idVar,
   
   ran.val <- diag(0,p2,p2)
   
-  for(i in 1:n){
-    temp.val <- get_Hvalue(Hmat.ran, p2, data=NULL, par.val, Bi[i,])
-    ran.val <- ran.val+temp.val
+  if(!is.null(Lpar)){
+    for(i in 1:n){
+      temp.val <- get_Hvalue(Hmat.ran, p2, data=NULL, par.val, Bi[i,])
+      ran.val <- ran.val+temp.val
+    }
   }
   
   ran.val <- bdiag(diag(0, p1,p1), ran.val)

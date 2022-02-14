@@ -7,10 +7,14 @@ est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
   n <- nrow(Bi)
   q1 <- length(Jdisp)
   q2 <- ncol(invSIGMA0)
-  Lmat  <- make_strMat(q2) 
+  if(q2>1) {
+    Lmat  <- make_strMat(q2) 
+  } else {
+    Lmat <- list(M=matrix(1), Mpar=NULL)
+  }
   qL <- length(Lmat$Mpar)
   ran.loglike <- str_replace_all(RespLog$ran.loglike, "invSIGMA", paste0("solve(",Lmat$M, ")"))
-  
+
   Yrandisp <- !is.null(RespLog$randisp.loglike)
   Ysigma <- !is.null(RespLog$sigma.loglike)
   
