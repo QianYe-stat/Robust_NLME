@@ -20,7 +20,7 @@ rm(list=ls())
 (file.sources <- paste0(here::here("src"), "/", file.sources))
 sapply(file.sources,source)
 ######################### Simulation setting
-rep <- 5
+rep <- 3
 n <- 100
 ni <- 15
 N <- n*ni
@@ -33,7 +33,7 @@ uniqueID <- seq(1:n)
 beta <- c(2.5, 3.0, 7.5)
 gamma <- c(5.2, 1.6, -1.2)
 d <- c(0.4, 0.2, 1.0)
-Mat <- matrix(c(1,0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1), ncol=3)
+Mat <- matrix(c(1,0.5, 0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1, 0.5,0.5, 0.5, 0.5, 1 ), ncol=4)
 
 alpha0 <- -8
 alpha1 <-  1.5
@@ -179,11 +179,13 @@ for(k in 1:rep){
     
     ## generate random effects
     a0 <- rnorm(n, sd=sigma_a)
-    b1 <- rnorm(n, sd=sigma_b)
+  
     
+    D <- diag(c(d, sigma_b)) %*% Mat %*% diag(c(d, sigma_b))
+    ran <- rmvnorm(n, sigma=D)
     
-    D <- diag(d) %*% Mat %*% diag(d)
-    u <- rmvnorm(n, sigma=D)
+    u <- ran[,c(1:3)]
+    b1 <- ran[,4]
     
     simdat <- c()
     ## data set
@@ -240,12 +242,13 @@ for(k in 1:rep){
   ############### store output
   
   #### TS
-  beta.est.TS <- rbind(beta.est.TS, TS$fixedest)
-  beta.sd.TS <- rbind(beta.sd.TS, TS$fixedSD)
+  beta.index <- str_detect(names(TS$fixedest), "beta")
+  beta.est.TS <- rbind(beta.est.TS, TS$fixedest[beta.index])
+  beta.sd.TS <- rbind(beta.sd.TS, TS$fixedSD[beta.index])
   
-  alpha.index <- str_detect(names(TS$dispersion), "alpha")
-  alpha.est.TS <- rbind(alpha.est.TS,TS$dispersion[alpha.index])
-  alpha.sd.TS <- rbind(alpha.sd.TS, TS$dispSD[alpha.index])
+  alpha.index <- str_detect(names(TS$fixedest), "alpha")
+  alpha.est.TS <- rbind(alpha.est.TS,TS$fixedest[alpha.index])
+  alpha.sd.TS <- rbind(alpha.sd.TS, TS$fixedSD[alpha.index])
   
   gamma.est.TS <- rbind(gamma.est.TS, fixef(cd4.fit))
   gamma.sd.TS <- rbind(gamma.sd.TS, summary(cd4.fit)$tTable[,"Std.Error"])
@@ -256,14 +259,13 @@ for(k in 1:rep){
   beta.est.JM <- rbind(beta.est.JM, JM$fixedest[beta.index])
   beta.sd.JM <- rbind(beta.sd.JM, JM$fixedSD[beta.index])
   
-  alpha.index <- str_detect(names(JM$dispersion), "alpha")
-  alpha.est.JM <- rbind(alpha.est.JM,JM$dispersion[alpha.index])
-  alpha.sd.JM <- rbind(alpha.sd.JM, JM$dispSD[alpha.index])
+  alpha.index <- str_detect(names(JM$fixedest), "alpha")
+  alpha.est.JM <- rbind(alpha.est.JM,JM$fixedest[alpha.index])
+  alpha.sd.JM <- rbind(alpha.sd.JM, JM$fixedSD[alpha.index])
   
   gamma.index <-  str_detect(names(JM$fixedest), "gamma")
   gamma.est.JM <- rbind(gamma.est.JM, JM$fixedest[gamma.index])
   gamma.sd.JM <-  rbind(gamma.sd.JM, JM$fixedSD[gamma.index])
-  
   ##################### organize output 
   
   colnames(beta.est.TS) <- colnames(beta.sd.TS) <-  colnames(beta.est.JM) <- colnames(beta.sd.JM) <- colnames(alpha.est.TS) <- colnames(alpha.sd.TS) <- colnames(alpha.est.JM) <- colnames(alpha.sd.JM) <- colnames(gamma.est.TS) <- colnames(gamma.sd.TS) <- colnames(gamma.est.JM) <- colnames(gamma.sd.JM) <- NULL
@@ -300,14 +302,15 @@ get_summary<- function(list){
   
   cbind(Est, rBias, rMSE, SE.em, SE, Coverage)
 }
-ts <- map(TS.out, get_summary)
-jm <- map(JM.out, get_summary)
+ 
+map(TS.out, get_summary)
+map(JM.out, get_summary)
 
-xtable(cbind(ts$beta, jm$beta), type = "latex",digits = 3)
-xtable(cbind(ts$alpha, jm$alpha), type = "latex",digits = 3)
-xtable(cbind(ts$gamma, jm$gamma), type = "latex",digits = 3)
+#xtable(cbind(ts$beta, jm$beta), type = "latex",digits = 3)
+#xtable(cbind(ts$alpha, jm$alpha), type = "latex",digits = 3)
+#xtable(cbind(ts$gamma, jm$gamma), type = "latex",digits = 3)
 
 save.image(here::here("results", "sim_JM.RData"))
-saveRDS(map(TS.out, get_summary), here::here("results", "TS_out.rds"))
-saveRDS(map(JM.out, get_summary), here::here("results", "JM_out.rds"))
+#saveRDS(map(TS.out, get_summary), here::here("results", "TS_out.rds"))
+#saveRDS(map(JM.out, get_summary), here::here("results", "JM_out.rds"))
 
