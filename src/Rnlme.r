@@ -3,8 +3,9 @@
 #' @param idVar
 
 
-Rnlme <- function(nlmeObjects, long.data, idVar, sd.method="None", dispersion.SD=FALSE, sdghsize=4,
-                  itertol=1e-3, Ptol=1e-2, iterMax=15, Verbose=FALSE){
+Rnlme <- function(nlmeObjects, long.data, idVar, 
+                  sd.method="None", dispersion.SD=FALSE, independent.raneff=FALSE,
+                  sdghsize=4, itertol=1e-3, Ptol=1e-2, iterMax=15, Verbose=FALSE){
 
   #set.seed(123)
   ##################################### settings for nlme model 
@@ -81,7 +82,7 @@ Rnlme <- function(nlmeObjects, long.data, idVar, sd.method="None", dispersion.SD
                                   fixedest, dispest0, invSIGMA0, Lval0,
                                   Bi, B,
                                   lower=lower.disp, upper=upper.disp,
-                                  Verbose=Verbose)
+                                  independent=independent.raneff, Verbose=Verbose)
     
     dispest <- disp.output$disp
     invSIGMA <- disp.output$invSIGMA

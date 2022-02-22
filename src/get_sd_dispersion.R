@@ -6,10 +6,13 @@ get_sd_dipsersion <- function(RespLog, long.data, idVar,
   Yrandisp <- !is.null(RespLog$randisp.loglike)
   Ysigma <- !is.null(RespLog$sigma.loglike)
   n <- nrow(Bi)
-  if(ncol(invSIGMA0)>1) {
-    Lmat  <- make_strMat(ncol(invSIGMA0)) 
+  q2 <- ncol(invSIGMA0)
+  if(dim(Lval0)[1]>0) {
+    Lmat  <- make_strMat(q2) 
   } else {
-    Lmat <- list(M=matrix(1), Mpar=NULL)
+    M=diag(rep(1,q2))
+    M.expr <- paste0("matrix(c(", paste0(c(M), collapse=","), "),nrow=", q2, ",ncol=", q2, ", byrow=TRUE)") 
+    Lmat <- list(M=M.expr, Mpar=NULL)
   }
  
   Lpar <- Lmat$Mpar

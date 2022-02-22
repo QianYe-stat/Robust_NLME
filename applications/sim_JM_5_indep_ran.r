@@ -20,7 +20,7 @@ rm(list=ls())
 (file.sources <- paste0(here::here("src"), "/", file.sources))
 sapply(file.sources,source)
 ######################### Simulation setting
-rep <- 3
+rep <- 200
 n <- 100
 ni <- 15
 N <- n*ni
@@ -33,7 +33,7 @@ uniqueID <- seq(1:n)
 beta <- c(2.5, 3.0, 7.5)
 gamma <- c(5.2, 1.6, -1.2)
 d <- c(0.4, 0.2, 1.0)
-Mat <- matrix(c(1,0.5, 0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 0.5, 1, 0.5,0.5, 0.5, 0.5, 1 ), ncol=4)
+Mat <- diag(rep(1,4))
 
 alpha0 <- -8
 alpha1 <-  1.5
@@ -179,7 +179,7 @@ for(k in 1:rep){
     
     ## generate random effects
     a0 <- rnorm(n, sd=sigma_a)
-  
+    
     
     D <- diag(c(d, sigma_b)) %*% Mat %*% diag(c(d, sigma_b))
     ran <- rmvnorm(n, sigma=D)
@@ -217,7 +217,7 @@ for(k in 1:rep){
     simdat <- simdat %>% arrange(patid, day)
     
     ########################## Modeling simdat
-          #### Two step
+    #### Two step
     
     cd4.fit <- try(lme(cd4~day+I(day^2), data=simdat, random=~1|patid))
     if(class(cd4.fit)!="try-error"){
@@ -304,7 +304,7 @@ get_summary<- function(list){
   Bais_mat <- t(apply(list$Est, 1, FUN=function(t){t-list$True}))
   
   rBias <- abs(Est-list$True)/abs(list$True)*100
- 
+  
   rMSE <-  apply(Bais_mat, 2, FUN=function(t){mean(t^2)})/abs(list$True)*100
   
   SE.em <- apply(list$Est, 2, sd)
@@ -322,9 +322,12 @@ get_summary<- function(list){
   
   cbind(Est, rBias, rMSE, SE.em, SE, Coverage)
 }
- 
+
+
 map(TS.out, get_summary)
 map(JM.out, get_summary)
+map(TS.out1, get_summary)
+map(JM.out1, get_summary)
 
 #xtable(cbind(ts$beta, jm$beta), type = "latex",digits = 3)
 #xtable(cbind(ts$alpha, jm$alpha), type = "latex",digits = 3)

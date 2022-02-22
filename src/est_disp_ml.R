@@ -1,16 +1,18 @@
 est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
-                           fixedest, dispest0, invSIGMA0, Lval0,
-                           Bi, B,
-                           lower, upper,
-                           Verbose=TRUE){
+                        fixedest, dispest0, invSIGMA0, Lval0,
+                        Bi, B,
+                        lower, upper,
+                        independent, Verbose=TRUE){
   
   n <- nrow(Bi)
   q1 <- length(Jdisp)
   q2 <- ncol(invSIGMA0)
-  if(q2>1) {
+  if(q2>1 & !independent) {
     Lmat  <- make_strMat(q2) 
   } else {
-    Lmat <- list(M=matrix(1), Mpar=NULL)
+    M=diag(rep(1,q2))
+    M.expr <- paste0("matrix(c(", paste0(c(M), collapse=","), "),nrow=", q2, ",ncol=", q2, ", byrow=TRUE)") 
+    Lmat <- list(M=M.expr, Mpar=NULL)
   }
   qL <- length(Lmat$Mpar)
   ran.loglike <- str_replace_all(RespLog$ran.loglike, "invSIGMA", paste0("solve(",Lmat$M, ")"))
@@ -76,14 +78,18 @@ est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
     }
     gr.mu.val <- c(apply(gr.mu.val, 2, sum), rep(0, qL))
     
-    gr.ran.val <- c()
-    for(i in 1:n){
-      temp.val <-  with(par.val, with(Bi[i,], eval(parse(text=gr.ran))))
-      gr.ran.val <- rbind(gr.ran.val, temp.val)
+    if(q2>1 & !independent){
+      gr.ran.val <- c()
+      for(i in 1:n){
+        temp.val <-  with(par.val, with(Bi[i,], eval(parse(text=gr.ran))))
+        gr.ran.val <- rbind(gr.ran.val, temp.val)
+      }
+      gr.ran.val <- as.vector(apply(gr.ran.val, 2, sum))
+      
+      fy <- gr.mu.val+gr.ran.val
+    } else {
+      fy <- gr.mu.val
     }
-    gr.ran.val <- as.vector(apply(gr.ran.val, 2, sum))
-    
-    fy <- gr.mu.val+gr.ran.val
     return(-fy)
   }
   
@@ -94,7 +100,7 @@ est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
   if(Verbose==TRUE) check=1  else check=0
   
   # start iteration
-  while(convge != 0 & M<3){
+  while(convge != 0 & M<20){
     if(is.null(Lval0)){
       Lval00 <- runif( qL, 0, pi)
     } else{

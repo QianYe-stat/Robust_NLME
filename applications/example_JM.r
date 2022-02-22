@@ -131,17 +131,104 @@ nlmeObject <- list(
 )
 
 
-
 nlmeObjects <- list(nlmeObject, lmeObject)
 
-out <- Rnlme(nlmeObjects=nlmeObjects, long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
+out <- Rnlme(nlmeObjects=nlmeObjects, long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE, iterMax=30)
 out$fixedest
 out$fixedSD
 out$dispersion
 out$dispSD
 
-out.reml <- Rnlme(nlmeObjects=nlmeObjects, long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
-out.reml$fixedest
-out.reml$fixedSD
-out.reml$dispersion
-out.reml$dispSD
+########################## Bootstrapping SE
+
+group <- dat$patid  # grouping variable, e.g patient ID
+uniqueID <- unique(group)   
+n <- length(uniqueID)  # sample size
+ni <- table(group)   # number of repeated measurements for each subject 
+N <- nrow(dat)
+t <- dat$day
+
+# estimates from cd4.fit
+cd4.coefs <- fixed.effects(cd4.fit)
+cd4.sigma <- cd4.fit$sigma
+cd4.randisp <- as.numeric(VarCorr(cd4.fit)[1,"StdDev"])
+gamma <- 
+xi <- 
+sigma_b <- 
+
+# estimates from Rnlme
+d <- out$dispersion
+Mat <- out$SIGMA
+beta <- out$fixedest[c(1:3)]
+alpha0 <- out$fixedest["alpha0"]
+alpha1 <-  out$fixedest["alpha1"]
+alpha <- c(alpha0, alpha1)
+sigma_a <- 1
+################ models
+nf1 <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
+nf2 <- function(p1,p2,p3,t) p1+p2*t+p3*t^2
+
+sigma1.bt <- list(
+  model=NULL,
+  str.fixed=xi,
+  lower.fixed=NULL,
+  upper.fixed=NULL,
+  parName="xi"
+)
+lmeObject.bt <- list(
+  nf = "nf2" ,
+  model= cd4 ~ nf(p1,p2,p3,day),
+  var=c("day"),
+  fixed = p1+p2+p3 ~1,
+  random = p1 ~1,
+  family='normal', 
+  ran.dist='normal',
+  fixName="gamma",
+  ranName="b",
+  dispName="sigb",
+  sigma=sigma1.bt,    # residual dispersion model (include residual random eff)
+  ran.Cov=NULL,  # random effect dispersion model (include random random eff (double random eff))
+  str.fixed=gamma,  # starting value for fixed effect
+  str.disp=c(sigma_b),  # starting value for fixed dispersion of random eff
+  lower.fixed=NULL, # lower bounds for fixed eff
+  upper.fixed=rep(100,3), # upper bounds for fixed eff
+  lower.disp=c(0), # lower bounds for fixed dispersion of random eff
+  upper.disp=c(Inf) # upper bounds for  fixed dispersion of random eff
+)
+
+# residual dispersion model:  
+sigma2.bt <- list(
+  model=~1+cd4.true+(1|patid),
+  link='log',
+  ran.dist="stdnormal",
+  str.fixed=c(alpha0, alpha1),
+  lower.fixed=NULL,
+  upper.fixed=NULL,
+  fixName="alpha",
+  ranName="a",
+  trueVal.model=list(var="cd4.true", model=lmeObject.bt)
+)
+
+nlmeObject.bt <- list(
+  nf = "nf1",
+  model= lgcopy ~ nf(p1,p2,p3,day),
+  var=c("day"),
+  fixed = p1+p2+p3 ~1,
+  random = p1+p2+p3 ~1,
+  family='normal', 
+  ran.dist='normal',
+  fixName="beta",
+  ranName="u",
+  dispName="d",
+  sigma=sigma2.bt,    # residual dispersion model (include residual random eff)
+  ran.Cov=NULL,  # random effect dispersion model (include random random eff (double random eff))
+  str.fixed=beta,  # starting value for fixed effect
+  str.disp=d,  # starting value for fixed dispersion of random eff
+  lower.fixed=NULL, # lower bounds for fixed eff
+  upper.fixed=rep(100,3), # upper bounds for fixed eff
+  lower.disp=c(0,0,0), # lower bounds for fixed dispersion of random eff
+  upper.disp=c(Inf,Inf,Inf) # upper bounds for  fixed dispersion of random eff
+)
+
+nlmeObjects.bt <- list(nlmeObject.bt, lmeObject.bt)
+

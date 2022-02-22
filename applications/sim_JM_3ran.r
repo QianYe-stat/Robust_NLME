@@ -232,7 +232,8 @@ for(k in 1:rep){
         #### JM
         cat("--Runing Joint model\n")
         JM <- try(Rnlme(nlmeObjects=nlmeObjects_JM, long.data=simdat, 
-                        idVar="patid", sd.method="HL", dispersion.SD = TRUE))
+                        idVar="patid", sd.method="HL", dispersion.SD = TRUE, 
+                        independent.raneff=TRUE))
         cat("--done\n")
         if(class(JM)!="try-error") JMconvg <- JM$convergence
       }
