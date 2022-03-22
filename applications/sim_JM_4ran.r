@@ -4,6 +4,7 @@
 # for the Two-step (TS): the model for sigma contains cd4_pred
 # for Joint models (JM): the model for sigma contains cd4* (unobserved true value)
 # This simulation compare TS and JM
+# only p1 and p2 contains random effects
 ########################### load packages
 library(nlme)
 library(tidyverse)
@@ -21,7 +22,7 @@ rm(list=ls())
 sapply(file.sources,source)
 ######################### Simulation setting
 rep <- 2
-k.runs <- 3 
+k.runs <- 2 # number of bootstrap runs
 n <- 100
 ni <- 15
 N <- n*ni
@@ -33,8 +34,8 @@ uniqueID <- seq(1:n)
 
 beta <- c(2.5, 3.0, 7.5)
 gamma <- c(5.2, 1.6, -1.2)
-d <- c(0.4, 0.2, 1.0)
-Mat <- matrix(c(1,0.5, 0.5, 0.5, 1, 0.5, 0.5, 0.5, 1), ncol=3)
+d <- c(0.4, 1.0)
+Mat <- matrix(c(1,0.5,  0.5, 1), ncol=2)
 
 alpha0 <- -8
 alpha1 <-  1.5
@@ -80,7 +81,7 @@ nlmeObject_TS <- list(
   model= lgcopy ~ nf(p1,p2,p3,day),
   var=c("day"),
   fixed = p1+p2+p3 ~1,
-  random = p1+p2+p3 ~1,
+  random = p1+p3 ~1,
   family='normal', 
   ran.dist='normal',
   fixName="beta",
@@ -92,8 +93,8 @@ nlmeObject_TS <- list(
   str.disp=d,  # starting value for fixed dispersion of random eff
   lower.fixed=NULL, # lower bounds for fixed eff
   upper.fixed=rep(100,3), # upper bounds for fixed eff
-  lower.disp=c(0,0,0), # lower bounds for fixed dispersion of random eff
-  upper.disp=c(Inf,Inf,Inf) # upper bounds for  fixed dispersion of random eff
+  lower.disp=c(0,0), # lower bounds for fixed dispersion of random eff
+  upper.disp=c(Inf,Inf) # upper bounds for  fixed dispersion of random eff
 )
 
 nlmeObjects_TS=list(nlmeObject_TS)
@@ -149,7 +150,7 @@ nlmeObject_JM <- list(
   model= lgcopy ~ nf(p1,p2,p3,day),
   var=c("day"),
   fixed = p1+p2+p3 ~1,
-  random = p1+p2+p3 ~1,
+  random = p1+p3 ~1,
   family='normal', 
   ran.dist='normal',
   fixName="beta",
@@ -161,36 +162,38 @@ nlmeObject_JM <- list(
   str.disp=d,  # starting value for fixed dispersion of random eff
   lower.fixed=NULL, # lower bounds for fixed eff
   upper.fixed=rep(100,3), # upper bounds for fixed eff
-  lower.disp=c(0,0,0), # lower bounds for fixed dispersion of random eff
-  upper.disp=c(Inf,Inf,Inf) # upper bounds for  fixed dispersion of random eff
+  lower.disp=c(0,0), # lower bounds for fixed dispersion of random eff
+  upper.disp=c(Inf,Inf) # upper bounds for  fixed dispersion of random eff
 )
 
 nlmeObjects_JM <- list(nlmeObject_JM, lmeObject_JM)
 
 ################################# Simulation runs
 set.seed(123)
-est.TS <- sd.TS <-  est.JM <- sd.JM <- c()
+est.NLME <- sd.NLME <- est.TS <- sd.TS <-  est.JM <- sd.JM <- c()
+alpha.NLME <- c()
 sd.bt.JM <- sd.bt1.JM <- sd.bt2.JM <- c()
 runs.bt1 <- runs.bt2 <- c()
 
 for(k in 1:rep){
   cat("This is run", k, "\n")
   
-  cd4.fit <- TS <- JM <- 0
-  class(cd4.fit) <- class(TS) <- class(JM)<- "try-error"
+  nlme.fit <- cd4.fit <- TS <- JM <- 0
+  class(nlme.fit) <- class(cd4.fit) <- class(TS) <- class(JM)<- "try-error"
   TSconvg <- JMconvg <-  FALSE
   
-  while(class(cd4.fit)=="try-error" | class(JM)=="try-error" | class(TS)=="try-error"
+  while(class(nlme.fit)=="try-error"|class(cd4.fit)=="try-error" | class(JM)=="try-error" | class(TS)=="try-error"
         | TSconvg==FALSE| JMconvg==FALSE){
     
     ##########################  simulate data set
     
     ## generate random effects
     a0 <- rnorm(n, sd=sigma_a)
-  
+    
     
     D <- diag(d) %*% Mat %*% diag(d)
     u <- rmvnorm(n, sigma=D)
+    u <- cbind(u[,1], 0, u[,2])
     
     b1 <- rnorm(n, sd=sigma_b)
     
@@ -224,44 +227,56 @@ for(k in 1:rep){
     simdat <- simdat %>% arrange(patid, day)
     
     ########################## Modeling simdat
-          #### Two step
+    #### nlme()
+    dat_g <- groupedData(lgcopy~day|patid, data=simdat)
+    nlme.fit <- try(nlme(lgcopy~nf1(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1+p3 ~1,
+                     data=dat_g,start=beta))
     
-    cd4.fit <- try(lme(cd4~day+I(day^2), data=simdat, random=~1|patid))
-    if(class(cd4.fit)!="try-error"){
-      simdat$cd4.pred <- fitted(cd4.fit)
+    if(class(nlme.fit)!="try-error"){
       
-      cat("--Runing Two-step model\n")
-      TS <- try(Rnlme(nlmeObjects=nlmeObjects_TS, long.data=simdat, 
-                      idVar="patid", sd.method="HL", dispersion.SD = TRUE,
-                      independent.raneff=FALSE))
-      cat("--done\n")
-      if(class(TS)!="try-error") TSconvg <- TS$convergence
+      #### Two step
       
-      if(class(TS)!="try-error" & TSconvg){
-        #### JM
-        cat("--Runing Joint model\n")
-        JM <- try(Rnlme(nlmeObjects=nlmeObjects_JM, long.data=simdat, 
+      cd4.fit <- try(lme(cd4~day+I(day^2), data=simdat, random=~1|patid))
+      if(class(cd4.fit)!="try-error"){
+        simdat$cd4.pred <- fitted(cd4.fit)
+        
+        cat("--Runing Two-step model\n")
+        TS <- try(Rnlme(nlmeObjects=nlmeObjects_TS, long.data=simdat, 
                         idVar="patid", sd.method="HL", dispersion.SD = TRUE,
-                        independent.raneff="byModel"))
+                        independent.raneff=FALSE))
         cat("--done\n")
-        if(class(JM)!="try-error") JMconvg <- JM$convergence
+        if(class(TS)!="try-error") TSconvg <- TS$convergence
+        
+        if(class(TS)!="try-error" & TSconvg){
+          #### JM
+          cat("--Runing Joint model\n")
+          JM <- try(Rnlme(nlmeObjects=nlmeObjects_JM, long.data=simdat, 
+                          idVar="patid", sd.method="HL", dispersion.SD = TRUE,
+                          independent.raneff="byModel"))
+          cat("--done\n")
+          if(class(JM)!="try-error") JMconvg <- JM$convergence
+        }
       }
     }
   }
   ############### Bootstrapping SE #####################
   cat("--Runing Bootstrapping SE for Joint model\n\n")
-  JM.SD.BT <- get_sd_bootstrap(Rnlme.fit=JM, simdat, at.rep=k ,k.runs=k.runs, bt.method="non-par",independent.raneff = "byModel")
+  JM.SD.BT <- get_sd_bootstrap1(Rnlme.fit=JM, simdat, at.rep=k ,k.runs=k.runs, independent.raneff = "byModel")
   cat("--done\n")
   
   runs.bt1 <- c(runs.bt1, JM.SD.BT$runs.bt1)
   runs.bt2 <- c(runs.bt2, JM.SD.BT$runs.bt2)
   ############### store output
-
+  #### nlme
+  est.NLME <- rbind(est.NLME, fixef(nlme.fit))
+  alpha.NLME <- c(alpha.NLME, 2*log(nlme.fit$sigma))
+  sd.NLME <- rbind(sd.NLME, summary(nlme.fit)$tTable[,"Std.Error"])
+  
   #### TS
   est.TS <- rbind(est.TS, c(TS$fixedest, fixef(cd4.fit)))
   sd.TS <- rbind(sd.TS, c(TS$fixedSD, summary(cd4.fit)$tTable[,"Std.Error"]))
   
-
+  
   
   #### JM
   est.JM <- rbind(est.JM, JM$fixedest)
@@ -276,6 +291,8 @@ for(k in 1:rep){
   colnames(est.TS) <- colnames(sd.TS) <-   colnames(sd.JM) <- colnames(est.JM)
   colnames(sd.bt.JM) <- colnames(sd.bt1.JM) <-colnames(sd.bt2.JM) <- colnames(est.JM)
   
+  
+  NLME.out <- list(True=beta,Est=est.NLME, SD=sd.NLME)
   TS.out <- list(True=true.fixed,Est=est.TS, SD=sd.TS)
   JM.out <- list(True=true.fixed,Est=est.JM, SD=sd.JM, SD.BT=sd.bt.JM, SD.BT1=sd.bt1.JM, SD.BT2=sd.bt2.JM)
   
@@ -295,7 +312,7 @@ rm.big <- function(out, big){
     out1$SD.BT2 <- out$SD.BT2[!out.rm,]
   }
   
-  return(out1)
+  return(list(out_df=out1, out.rm=out.rm))
 }
 
 
@@ -305,13 +322,13 @@ get_summary<- function(out){
   Bais_mat <- t(apply(out$Est, 1, FUN=function(t){t-out$True}))
   
   rBias <- abs(Est-out$True)/abs(out$True)*100
- 
+  
   rMSE <-  apply(Bais_mat, 2, FUN=function(t){mean(t^2, na.rm=TRUE)})/abs(out$True)*100
   
   SE.em <- apply(out$Est, 2, sd, na.rm=TRUE)
   
   SE <- apply(out$SD,2, FUN = function(t){sqrt(mean(t^2, na.rm=TRUE))})
-
+  
   
   lower <- out$Est-1.96*out$SD
   upper <- out$Est+1.96*out$SD
@@ -321,7 +338,7 @@ get_summary<- function(out){
     cov <- (lower[,i] <= out$True[i]) & (out$True[i]<= upper[,i])
     Coverage <- c(Coverage, mean(cov, na.rm=TRUE))
   }
-    
+  
   if(!is.null(out$SD.BT)){
     SE.BT <- apply(out$SD.BT,2, FUN = function(t){sqrt(mean(t^2, na.rm=TRUE))})
     SE.BT1 <- apply(out$SD.BT1,2, FUN = function(t){sqrt(mean(t^2, na.rm=TRUE))})
@@ -353,30 +370,37 @@ get_summary<- function(out){
   res <- cbind(Est, rBias, rMSE, SE.em, SE, Coverage)
   
   if(!is.null(out$SD.BT)) res <- cbind(Est, rBias, rMSE, SE.em, SE, Coverage, 
-                                SE.BT, Coverage.bt,
-                                SE.BT1, Coverage.bt1,
-                                SE.BT2, Coverage.bt2)
+                                       SE.BT, Coverage.bt,
+                                       SE.BT1, Coverage.bt1,
+                                       SE.BT2, Coverage.bt2)
   
   res
 }
 
 cat("\n Average runs for BT1 is", mean(runs.bt1), ".\n")
 cat("\n Average runs for BT2 is", mean(runs.bt2), ".\n")
+(nl <- get_summary(NLME.out))
+mean(alpha.NLME)
 (ts <- get_summary(TS.out))
 (jm <- get_summary(JM.out))
 
-TS.out1 <- rm.big(TS.out, big)
+NLME.out1 <- rm.big(NLME.out, big)$out_df
+(nl1 <- get_summary(NLME.out1))
+mean(alpha.NLME[!rm.big(NLME.out, big)$out.rm])
+
+
+TS.out1 <- rm.big(TS.out, big)$out_df
 (ts1 <- get_summary(TS.out1))
 
-JM.out1 <- rm.big(JM.out, big)
+JM.out1 <- rm.big(JM.out, big)$out_df
 (jm1 <- get_summary(JM.out1))
 
 cat("\n xtable for original output \n ")
-xtable(cbind(ts, jm), type = "latex",digits = 3)
+xtable(cbind(rbind(nl,0,0,0,0,0), ts, jm), type = "latex",digits = 3)
 
 
 cat("\n xtable for output with large rBias removed \n ")
-xtable(cbind(ts1, jm1), type = "latex",digits = 3)
+xtable(cbind(rbind(nl1,0,0,0,0,0),ts1, jm1), type = "latex",digits = 3)
 
 #save.image(here::here("results", "sim_JM.RData"))
 #saveRDS(map(TS.out, get_summary), here::here("results", "TS_out.rds"))

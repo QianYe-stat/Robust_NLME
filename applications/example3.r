@@ -61,12 +61,14 @@ dat$cd4.pred <- fitted(cd4.fit)
 sigmaObject2 <- list(
   model=~1+cd4.pred+(1|patid),
   link='log',
-  ran.dist="stdnormal",
+  ran.dist="normal",
   str.fixed=c(2*log(nlme.fit$sigma), 0),
+  str.disp=1,
   lower.fixed=NULL,
   upper.fixed=NULL,
   fixName="alpha",
-  ranName="a"
+  ranName="a",
+  dispName="siga"
 )
 
 
@@ -100,10 +102,11 @@ get_nlme_loglike(nlmeObject2)
 
 # ml
 
-out.nor <- Rnlme(nlmeObjects=list(nlmeObject2), long.data=dat, idVar="patid", sd.method="HL", dispersion.SD = TRUE)
+out.nor <- Rnlme(nlmeObjects=list(nlmeObject2), long.data=dat, idVar="patid", sd.method="HL", 
+                 dispersion.SD = TRUE, iterMax=30)
 
-our.indp <- Rnlme(nlmeObjects=list(nlmeObject2), long.data=dat, idVar="patid", sd.method="HL", dispersion.SD=TRUE, 
-      independent.raneff = TRUE)
+#our.indp <- Rnlme(nlmeObjects=list(nlmeObject2), long.data=dat, idVar="patid", sd.method="HL", dispersion.SD=TRUE, 
+#      independent.raneff = TRUE)
 
 out.nor$fixedest
 out.nor$fixedSD
@@ -129,23 +132,26 @@ cd4.sigma <- cd4.fit$sigma
 cd4.randisp <- as.numeric(VarCorr(cd4.fit)[1,"StdDev"])
 
 # estimates from Rnlme
-d <- out.nor$dispersion
+d <- out.nor$dispersion[c(1:3)]
 Mat <- out.nor$SIGMA
 beta <- out.nor$fixedest[c(1:3)]
 alpha0 <- out.nor$fixedest["alpha0"]
 alpha1 <-  out.nor$fixedest["alpha1"]
 alpha <- c(alpha0, alpha1)
+sigma_a <- out.nor$dispersion["siga0"]
 
 ############## models
 sigmaObject.sim <- list(
   model=~1+cd4.pred+(1|patid),
   link='log',
-  ran.dist="stdnormal",
+  ran.dist="normal",
   str.fixed=c(alpha0, alpha1),
+  str.disp=sigma_a,
   lower.fixed=NULL,
   upper.fixed=NULL,
   fixName="alpha",
-  ranName="a"
+  ranName="a",
+  dispName="siga"
 )
 
 nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
@@ -173,6 +179,7 @@ nlmeObject.sim <- list(
 
 
 beta.est.nor <- alpha.est.nor <- gamma.est <- c()
+disp.est <- c()
 List.Rnlme.nor <- NULL
 
 rep <- 200
@@ -189,7 +196,7 @@ for(k in 1:rep){
     
     cd4.ranef <- rnorm(n, sd=cd4.randisp)
     
-    a0 <- rnorm(n, sd=1)
+    a0 <- rnorm(n, sd=sigma_a)
     D <- diag(d) %*% Mat %*% diag(d)
     u <- rmvnorm(n, sigma=D)
     
@@ -227,7 +234,7 @@ for(k in 1:rep){
     if(class(lme.fit)!="try-error"){
       simdat$cd4.pred <- fitted(lme.fit)
       
-      Rnlme.fit <- try(Rnlme(nlmeObject=list(nlmeObject.sim), long.data=simdat, idVar="patid"))
+      Rnlme.fit <- try(Rnlme(nlmeObject=list(nlmeObject.sim), long.data=simdat, idVar="patid",iterMax=20))
       
       if(class(Rnlme.fit)!="try-error") convg <- Rnlme.fit$convergence
     }
@@ -238,11 +245,13 @@ for(k in 1:rep){
   beta.est.nor <- rbind(beta.est.nor, Rnlme.fit$fixedest[c(1:3)])
   alpha.est.nor <- rbind(alpha.est.nor, Rnlme.fit$fixedest[c(4,5)])
   gamma.est <- rbind(gamma.est, fixed.effects(lme.fit))
+  disp.est <- rbind(disp.est, c(Rnlme.fit$dispersion, as.numeric(VarCorr(lme.fit)[1,"StdDev"]) ,lme.fit$sigma))
   
 }
 apply(beta.est.nor, 2, sd)
 apply(alpha.est.nor, 2, sd)
 apply(gamma.est, 2, sd)
+apply(disp.est, 2, sd)
 
 drop.index1.beta <- apply(beta.est.nor,1,FUN=function(t){max(abs((t-beta)/beta))>0.15})
 drop.index1.alpha <- apply(alpha.est.nor,1,FUN=function(t){max(abs((t-alpha)/alpha))>0.15})
@@ -252,6 +261,7 @@ rep-sum(drop.index1)
 apply(beta.est.nor[!drop.index1,], 2, sd)
 apply(alpha.est.nor[!drop.index1,], 2, sd)
 apply(gamma.est[!drop.index1,], 2, sd)
+apply(disp.est[!drop.index1,], 2, sd)
 
 
 ########################## latex table
@@ -271,6 +281,12 @@ xtable(cbind(cd4.coefs,
              summary(cd4.fit)$tTable[,"Std.Error"],
              apply(gamma.est, 2, sd),
              apply(gamma.est[!drop.index1,], 2, sd)
+), type = "latex",digits = 3)
+
+xtable(cbind(c(out.nor$dispersion,cd4.randisp,cd4.sigma),
+             c(out.nor$dispSD, NA, NA),
+             apply(disp.est, 2, sd),
+             apply(disp.est[!drop.index1,], 2, sd)
 ), type = "latex",digits = 3)
 
 save.image(here::here("results", "Rnlme_example3_bootstrap.RData"))
