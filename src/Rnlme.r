@@ -2,6 +2,7 @@
 #' @param long.data
 #' @param idVar
 
+# independent.raneff: "byModel"; "byOne"; FALSE
 
 Rnlme <- function(nlmeObjects, long.data, idVar, 
                   sd.method="None", dispersion.SD=FALSE, independent.raneff=FALSE,
@@ -21,6 +22,8 @@ Rnlme <- function(nlmeObjects, long.data, idVar,
   p <- length(Jfixed)  #  dimension of fixed parameters 
   q <- length(Jraneff) # dimension of random effects
   qSIGMA <- JReturn$SIGMA.dim # dimension of SIGMA
+  
+  SIGMA.block <- JReturn$SIGMA.block
   
   ##################################### initial values
   fixedest0 <- JReturn$str.fixed
@@ -82,12 +85,13 @@ Rnlme <- function(nlmeObjects, long.data, idVar,
                                   fixedest, dispest0, invSIGMA0, Lval0,
                                   Bi, B,
                                   lower=lower.disp, upper=upper.disp,
-                                  independent=independent.raneff, Verbose=Verbose)
+                                  independent=independent.raneff,block=SIGMA.block, Verbose=Verbose)
     
     dispest <- disp.output$disp
     invSIGMA <- disp.output$invSIGMA
     SIGMA <- disp.output$SIGMA
     Lval <- disp.output$Lval
+    Lmat <- disp.output$Lmat
     
     cat("done.\n")
     
@@ -194,7 +198,7 @@ Rnlme <- function(nlmeObjects, long.data, idVar,
   if(dispersion.SD==TRUE){
     cat("Start estimating SD for dispersion parameters ...\n ...\n")
     sd_disp <- get_sd_dipsersion(RespLog=Jloglike, long.data, idVar,
-                                 fixedest0, dispest0, invSIGMA0,SIGMA0, Lval0,
+                                 fixedest0, dispest0, invSIGMA0,SIGMA0, Lval0, Lmat,
                                  Bi, B,
                                  Jfixed, Jraneff, Jdisp)
     cat("done.\n")
