@@ -4,12 +4,12 @@ get_Jloglike <- function(nlmeObjects){
   
   mu.loglike <- sigma.loglike <- ran.loglike <-  vector("list",k)
   
-  Jfixed  <- Jdisp <- parSIGMA <- parNSIG <- str.fixed <- str.disp <- lower.fixed <- lower.disp <- upper.fixed <- upper.disp <- c()
+  Jfixed  <- Jdisp <- parSIGMA <- parNSIG <- str.fixed <- str.disp <- lower.fixed <- lower.disp <- upper.fixed <- upper.disp <- SIGMA.block <- c()
   
   for(i in 1:k){
-    nlmeOjbect_i <- nlmeObjects[[i]]
+    nlmeObject_i <- nlmeObjects[[i]]
     
-    nlmeReturn <- get_nlme_loglike(nlmeOjbect_i)
+    nlmeReturn <- get_nlme_loglike(nlmeObject_i)
     
     lik <- nlmeReturn$loglike
     
@@ -23,6 +23,8 @@ get_Jloglike <- function(nlmeObjects){
     
     parSIGMA <- c(parSIGMA, nlmeReturn$ran.eff[1:nlmeReturn$SIGMA.dim])
     parNSIG <- c(parNSIG, nlmeReturn$ran.eff[-(1:nlmeReturn$SIGMA.dim)])
+    
+    SIGMA.block <- c(SIGMA.block, nlmeReturn$SIGMA.dim)
     
     str.fixed <- c(str.fixed, nlmeReturn$str.fixed)
     str.disp <- c(str.disp,nlmeReturn$str.disp)
@@ -45,13 +47,14 @@ get_Jloglike <- function(nlmeObjects){
   V.parSIGMA <- paste0("c(", paste0(parSIGMA, collapse = ","), ")")
   ran.loglike <- paste0("-0.5*",V.parSIGMA, "%*%invSIGMA%*%", V.parSIGMA,"+0.5*log(det(invSIGMA))-0.5*", SIGMA.dim,"*log(2*pi)")
 
+
   ## Joint likelihood
   Jloglike=list(mu.loglike=mu.loglike,sigma.loglike=sigma.loglike, ran.loglike=ran.loglike)
   
 
-  result <- list(Jloglike=Jloglike, Jfixed=Jfixed, Jraneff=Jraneff, Jdisp=Jdisp, SIGMA.dim=SIGMA.dim,
+  result <- list(Jloglike=Jloglike, Jfixed=Jfixed, Jraneff=Jraneff, Jdisp=Jdisp,
        str.fixed=str.fixed, str.disp=str.disp, lower.fixed=lower.fixed, lower.disp=lower.disp,
-       upper.fixed=upper.fixed, upper.disp=upper.disp)
+       upper.fixed=upper.fixed, upper.disp=upper.disp,SIGMA.dim=SIGMA.dim, SIGMA.block=SIGMA.block)
   
   return(result)
 }

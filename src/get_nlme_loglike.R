@@ -78,16 +78,24 @@ get_nlme_loglike <- function(nlmeObject){
   ############## Return from get_info_sigma #####################
   if(is.null(nlmeObject$sigma$model)){
     sigma.raneff <- NULL  # random effect in residual dispersion (residual random effects)
-    sigma.fixed <- nlmeObject$sigma$parName
+    
     sigma.loglike <- NULL
-    sigma.str <- nlmeObject$sigma$str.fixed
-    sigma.lower <- nlmeObject$sigma$lower.fixed
-    sigma.upper <- nlmeObject$sigma$upper.fixed
+    
     sigma.df <- NULL
     sigmaExpr <- paste0("(",nlmeObject$sigma$parName, "^2)" )
     
-    if(is.null(sigma.lower)) sigma.lower <- 0
-    if(is.null(sigma.upper)) sigma.upper <- Inf
+    sigma.fixed <- NULL 
+    sigma.str <-  NULL
+    sigma.lower <-  NULL
+    sigma.upper <-  NULL
+    
+    sigma.disp <- nlmeObject$sigma$parName
+    sigma.str.disp <- nlmeObject$sigma$str.disp
+    sigma.lower.disp <- nlmeObject$sigma$lower.disp
+    sigma.upper.disp <- nlmeObject$sigma$upper.disp
+    
+    if(is.null(sigma.lower.disp)) sigma.lower.disp <- 0
+    if(is.null(sigma.upper.disp)) sigma.upper.disp <- Inf
     
   } else {
     sigmaInfo <- get_info_sigma(nlmeObject$sigma)
@@ -99,6 +107,11 @@ get_nlme_loglike <- function(nlmeObject){
     sigma.upper <- sigmaInfo$upper
     sigma.df <- sigmaInfo$df
     sigmaExpr <- sigmaInfo$sigmaExpr
+    
+    sigma.disp <- sigmaInfo$disp
+    sigma.str.disp <- sigmaInfo$str.disp
+    sigma.lower.disp <- sigmaInfo$lower.disp
+    sigma.upper.disp <- sigmaInfo$upper.disp
   }
   
   ranCovObject <- nlmeObject$ran.Cov
@@ -190,19 +203,11 @@ get_nlme_loglike <- function(nlmeObject){
   } 
   
   #####
-  if(is.null(nlmeObject$sigma$model)){
-    str.fixed <- nlmeObject$str.fixed
-    names(str.fixed) <- fixed
-    
-    str.disp <- c(nlmeObject$str.disp, sigma.str)
-    names(str.disp) <- c(disp,sigma.fixed)
-  } else {
     str.fixed <- c(nlmeObject$str.fixed, sigma.str)
     names(str.fixed) <- c(fixed, sigma.fixed)
-    
-    str.disp <- nlmeObject$str.disp 
-    names(str.disp) <- disp
-  }
+    str.disp <- c(nlmeObject$str.disp, sigma.str.disp)
+    names(str.disp) <- c(disp,sigma.disp)
+  
   # if(q==1){
   #   ran.loglike <- make_loglike_normal(raneff, mean=rep("0",q), sd=rep("1",q) )
   # }
@@ -213,27 +218,13 @@ get_nlme_loglike <- function(nlmeObject){
   # }
   #####
   
-  if(is.null(nlmeObject$sigma$model)){
+ 
     if(is.null(nlmeObject$lower.disp))  nlmeObject$lower.disp <- rep(0, q)
     if(is.null(nlmeObject$upper.disp))  nlmeObject$upper.disp <- rep(Inf, q)
     
-    lower.disp <- c(nlmeObject$lower.disp, sigma.lower)
-    upper.disp <- c(nlmeObject$upper.disp, sigma.upper)
-    names(lower.disp) <- names(upper.disp) <- c(disp,sigma.fixed)
-    
-    lower.fixed <- nlmeObject$lower.fixed
-    upper.fixed <- nlmeObject$upper.fixed
-    if(is.null(lower.fixed)) lower.fixed <- rep(-Inf, p)
-    if(is.null(upper.fixed)) upper.fixed <- rep(Inf, p)
-    
-    names(lower.fixed) <- names(upper.fixed) <- fixed
-  } else {
-    if(is.null(nlmeObject$lower.disp))  nlmeObject$lower.disp <- rep(0, q)
-    if(is.null(nlmeObject$upper.disp))  nlmeObject$upper.disp <- rep(Inf, q)
-    
-    lower.disp <- nlmeObject$lower.disp
-    upper.disp <- nlmeObject$upper.disp
-    names(lower.disp) <- names(upper.disp) <- disp 
+    lower.disp <- c(nlmeObject$lower.disp, sigma.lower.disp)
+    upper.disp <- c(nlmeObject$upper.disp, sigma.upper.disp)
+    names(lower.disp) <- names(upper.disp) <- c(disp,sigma.disp)
     
     if(is.null(nlmeObject$lower.fixed)) nlmeObject$lower.fixed <- rep(-Inf, p)
     if(is.null(nlmeObject$upper.fixed)) nlmeObject$upper.fixed <- rep(Inf, p)
@@ -242,13 +233,11 @@ get_nlme_loglike <- function(nlmeObject){
     upper.fixed <- c(nlmeObject$upper.fixed, sigma.upper)
     
     names(lower.fixed) <- names(upper.fixed) <- c(fixed, sigma.fixed)
-  }
   
-  if(is.null(nlmeObject$sigma$model)){
-    disp <- c(disp,sigma.fixed)
-  } else {
+    disp <- c(disp,sigma.disp)
+
     fixed <- c(fixed, sigma.fixed)
-  }
+
   
   if(!is.null(ranCovObject)){
     loglike <- list(mu.loglike=mu.loglike, sigma.loglike=sigma.loglike, 

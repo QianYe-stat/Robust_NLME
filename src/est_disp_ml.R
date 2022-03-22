@@ -1,15 +1,20 @@
+
 est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
                         fixedest, dispest0, invSIGMA0, Lval0,
                         Bi, B,
                         lower, upper,
-                        independent, Verbose=TRUE){
+                        independent, block, Verbose=TRUE){
   
   n <- nrow(Bi)
   q1 <- length(Jdisp)
   q2 <- ncol(invSIGMA0)
-  if(q2>1 & !independent) {
+  if(q2>1 & independent==FALSE) {
     Lmat  <- make_strMat(q2) 
-  } else {
+  } 
+  if(q2>1 & independent=="byModel" & max(block)>1){
+    Lmat  <- make_strMat(q2, block)
+  }
+  if(q2==1 | independent=="byOne"|max(block)==1) {
     M=diag(rep(1,q2))
     M.expr <- paste0("matrix(c(", paste0(c(M), collapse=","), "),nrow=", q2, ",ncol=", q2, ", byrow=TRUE)") 
     Lmat <- list(M=M.expr, Mpar=NULL)
@@ -78,7 +83,7 @@ est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
     }
     gr.mu.val <- c(apply(gr.mu.val, 2, sum), rep(0, qL))
     
-    if(q2>1 & !independent){
+    if(!is.null(Lmat$Mpar)){
       gr.ran.val <- c()
       for(i in 1:n){
         temp.val <-  with(par.val, with(Bi[i,], eval(parse(text=gr.ran))))
@@ -111,8 +116,8 @@ est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
     
     result <- try(optim(par=str_val0, fn=ff, gr=gr,
                         method="L-BFGS-B",
-                        lower=c(lower, rep(0.01,q2)), 
-                        upper=c(upper,rep(pi*0.95,q2)),
+                        lower=c(lower, rep(0.01,qL)), 
+                        upper=c(upper,rep(pi*0.95,qL)),
                         control = list(trace=check,maxit=1000)), 
                   silent=T)
     
@@ -151,5 +156,5 @@ est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
     stop("Iteration stops because dispersion parameters can not be successfully estimated.")  
   }
   
-  return(list(disp=output, invSIGMA=invSIGMAest, Lval=Lval, SIGMA=SIGMAest))
+  return(list(disp=output, invSIGMA=invSIGMAest, Lval=Lval, SIGMA=SIGMAest, Lmat=Lmat))
 }

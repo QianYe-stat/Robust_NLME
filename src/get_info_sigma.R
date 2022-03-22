@@ -30,6 +30,7 @@ get_info_sigma<- function(sigmaObject){
   if(q>0){
     
     raneff <- paste(sigmaObject$ranName, 0:(q-1), sep="")  # name random effects
+
     
     if(sigmaObject$ran.dist=="inverse-Chi"){
       df <- sigmaObject$df
@@ -68,7 +69,6 @@ get_info_sigma<- function(sigmaObject){
   }
   
   
-  
   str.fixed <- sigmaObject$str.fixed
   lower.fixed <- sigmaObject$lower.fixed
   upper.fixed <- sigmaObject$upper.fixed
@@ -78,6 +78,7 @@ get_info_sigma<- function(sigmaObject){
   if(is.null(upper.fixed)) upper.fixed <- rep(Inf, p)
   
   names(str.fixed) <- names(lower.fixed) <- names(upper.fixed) <- fixed
+  disp <- str.disp <- lower.disp <- upper.disp <- NULL
   
   if(sigmaObject$ran.dist=="normal"){
     
@@ -90,11 +91,8 @@ get_info_sigma<- function(sigmaObject){
   
   names(str.disp) <- names(lower.disp) <- names(upper.disp) <- disp.par
   
-  fixed <- c(fixed, disp.par)
+  disp <- disp.par
   
-  str.fixed <- c(str.fixed, str.disp)
-  lower.fixed <- c(lower.fixed, lower.disp)
-  upper.fixed <- c(upper.fixed, upper.disp)
   }
   
   trueVal.model <- sigmaObject$trueVal.model
@@ -106,7 +104,8 @@ get_info_sigma<- function(sigmaObject){
   }
   
   return(list(sigmaExpr=sigma_expr, loglike=raneff_loglike, raneff=raneff, fixed=fixed, 
-              df=df,str.val=str.fixed,lower=lower.fixed, upper=upper.fixed))
+              df=df,str.val=str.fixed,lower=lower.fixed, upper=upper.fixed, 
+              disp=disp, str.disp=str.disp, lower.disp=lower.disp, upper.disp=upper.disp ))
 }
 
 

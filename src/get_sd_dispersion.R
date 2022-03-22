@@ -1,5 +1,5 @@
 get_sd_dipsersion <- function(RespLog, long.data, idVar,
-                   fixedest0, dispest0, invSIGMA0,SIGMA0, Lval0,
+                   fixedest0, dispest0, invSIGMA0,SIGMA0, Lval0,Lmat,
                    Bi, B,
                    Jfixed, Jraneff, Jdisp){
   
@@ -7,13 +7,7 @@ get_sd_dipsersion <- function(RespLog, long.data, idVar,
   Ysigma <- !is.null(RespLog$sigma.loglike)
   n <- nrow(Bi)
   q2 <- ncol(invSIGMA0)
-  if(dim(Lval0)[1]>0) {
-    Lmat  <- make_strMat(q2) 
-  } else {
-    M=diag(rep(1,q2))
-    M.expr <- paste0("matrix(c(", paste0(c(M), collapse=","), "),nrow=", q2, ",ncol=", q2, ", byrow=TRUE)") 
-    Lmat <- list(M=M.expr, Mpar=NULL)
-  }
+
  
   Lpar <- Lmat$Mpar
   ran.loglike <- str_replace_all(RespLog$ran.loglike, "invSIGMA", paste0("solve(",Lmat$M, ")"))
