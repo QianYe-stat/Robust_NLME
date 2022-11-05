@@ -7,7 +7,10 @@ get_loglike_value <- function(RespLog, long.data, fixedest, dispest, invSIGMA, B
   par.val <- as.list(c(fixedest, dispest))
   par.val$invSIGMA <- invSIGMA
   
-  mu.val <- with(long.data, with(par.val, with(B,eval(parse(text=RespLog$mu.loglike)))))
+  mu.val <- unlist(map(RespLog$mu.loglike, function(t){
+    with(long.data, with(par.val, with(B,eval(parse(text=t)))))
+  }))
+  
   if(Ysigma){
     sigma.val <- with(par.val, with(Bi,eval(parse(text=RespLog$sigma.loglike))))
   } else sigma.val <- 0
@@ -25,5 +28,5 @@ get_loglike_value <- function(RespLog, long.data, fixedest, dispest, invSIGMA, B
   }
   ran.val <- unlist(ran.val)
   
-  return(sum(mu.val)+sum(sigma.val)+sum(randisp.val)+sum(ran.val))
+  return(sum(mu.val, na.rm=TRUE)+sum(sigma.val)+sum(randisp.val)+sum(ran.val))
 }

@@ -13,8 +13,10 @@ get_sd <- function(RespLog, long.data, idVar,
 
   pars <- c(Jfixed, Jraneff)
   
+  Hmat.mu <- map(RespLog$mu.loglike, function(t){
+     get_Hessian(t, pars)
+  })
   
-  Hmat.mu <- get_Hessian(RespLog$mu.loglike, pars)
   if(Ysigma) Hmat.sigma <- get_Hessian(RespLog$sigma.loglike, pars)
   if(Yrandisp) Hmat.randisp <- get_Hessian(RespLog$randisp.loglike, pars)
   Hmat.ran <- get_Hessian(RespLog$ran.loglike, pars)
@@ -24,8 +26,11 @@ get_sd <- function(RespLog, long.data, idVar,
   par.val$invSIGMA <- invSIGMA0
   
   
-  mu.val <- get_Hvalue(Hmat.mu, p+q, long.data, par.val, B)
-
+  mu.val <- map(Hmat.mu, function(t){
+    get_Hvalue(t, p+q, long.data, par.val, B)
+  })
+ 
+  mu.val <- Reduce('+', mu.val)
   
   if(Ysigma){
     sigma.val <- get_Hvalue(Hmat.sigma, p+q, data=NULL, par.val, Bi)

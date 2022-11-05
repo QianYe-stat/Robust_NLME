@@ -18,15 +18,21 @@ get_sd_dipsersion <- function(RespLog, long.data, idVar,
   p1 <- length(Jdisp)
   p2 <- length(Lpar)
   
-  
-  Hmat.mu <- get_Hessian(RespLog$mu.loglike, Jdisp)
+
+  Hmat.mu <- map(RespLog$mu.loglike, function(t){
+    get_Hessian(t, Jdisp)
+  })
   #if(Ysigma) Hmat.sigma <- get_Hessian(RespLog$sigma.loglike, pars)
   #if(Yrandisp) Hmat.randisp <- get_Hessian(RespLog$randisp.loglike, pars)
   if(!is.null(Lpar)) Hmat.ran <- get_Hessian(ran.loglike, Lpar)
   
   par.val <- as.list(c(fixedest0, dispest0, Lval0))
   
-  mu.val <- get_Hvalue(Hmat.mu, p1, long.data, par.val, B)
+  mu.val <- map(Hmat.mu, function(t){
+    get_Hvalue(t, p1, long.data, par.val, B)
+  })
+  mu.val <- Reduce('+', mu.val)
+  
   mu.val <- bdiag(mu.val, diag(0, p2,p2))
   
   ran.val <- diag(0,p2,p2)
