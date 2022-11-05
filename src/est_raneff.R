@@ -8,7 +8,7 @@
   for(i in 1:n){
     subdat <- subset(long.data, long.data[, idVar]==uniqueID[i])
     
-    bi <- est_individual_raneff(RespLog=RespLog, data=subdat, raneff=Jraneff, 
+    bi <- est_individual_raneff1(RespLog=RespLog, data=subdat, raneff=Jraneff, 
                                 fixedest=fixedest0, dispest=dispest0, invSIGMA=invSIGMA0,
                                 Verbose=Verbose)
     nBi <- rbind(nBi, bi)

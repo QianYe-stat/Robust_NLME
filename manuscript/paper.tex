@@ -1,0 +1,374 @@
+\documentclass[12pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[colorlinks,linkcolor=black,citecolor=blue,urlcolor=black]{hyperref}
+\usepackage{amsfonts,hyphenat,booktabs,setspace,amssymb,float}
+\usepackage{pdfpages}
+\usepackage{amsmath, amssymb, mathrsfs}
+\usepackage{graphicx, psfrag, epsf}
+\usepackage{enumerate}
+\usepackage{natbib,longtable}
+\usepackage{url} 
+\usepackage{subfigure}
+
+\newenvironment{psmallmatrix}
+{\left(\begin{smallmatrix}}
+{\end{smallmatrix}\right)}
+\newcommand{\blind}{0}
+
+\setlength{\bibsep}{0pt}
+\def\spacingset#1{\renewcommand{\baselinestretch}%
+{#1}\small\normalsize} \spacingset{1.5}
+
+\newcommand{\btheta}{\mbox{\boldmath $\theta$}}
+\newcommand{\bmu}{\mbox{\boldmath $\mu$}}
+\newcommand{\balpha}{\mbox{\boldmath $\alpha$}}
+\newcommand{\bgamma}{\mbox{\boldmath $\gamma$}}
+\newcommand{\bbeta}{\mbox{\boldmath $\beta$}}
+\newcommand{\bpsi}{\mbox{\boldmath $\psi$}}
+\newcommand{\bphi}{\mbox{\boldmath $\phi$}}
+\newcommand{\bxi}{\mbox{\boldmath $\xi$}}
+\newcommand{\bnu}{\mbox{\boldmath $\nu$}}
+\newcommand{\bsigma}{\mbox{\boldmath $\sigma$}} 
+
+\begin{document}
+
+\begin{center}
+ {\Large{\bf Joint Mean-Variance Inference for Nonlinear Mixed-Effects Models with 
+   Measurement Errors and Outliers}}
+
+      March, 2022 
+
+      Ye et al. 
+\end{center} 
+\vspace{1cm}
+
+\section{Introduction}
+
+Nonlinear mixed-effects (NLME) models are widely used in many biological applications, 
+such as pharmacokinetic analysis, HIV viral dynamics, and studies of growth and decay. 
+Many NLME models are derived based on the underlying data-generation mechanisms, so they 
+are also called {\em scientific models} or {\em mechanistic models}. They may be more desirable 
+than empirical models such as linear mixed effects (LME) models and nonparametric mixed 
+models, since they may provide more reliable predicted values for (unobserved) missing/censored values 
+or future values. In many longitudinal studies, the within-individual repeated measurements exhibit 
+large variations and these variations may change over time. It is important to understand 
+the nature of the within-individual systematic and random variations in order to provide 
+good predictions and efficient statistical inference. 
+
+
+Figure 1 shows the profiles of HIV viral load (HIV-1 RNA copies) longitudinal measurements 
+on a sub-sample of individuals from an AIDS study during an 
+anti-HIV treatment. We see that viral loads decline
+rapidly in the initial period (first few weeks), roughly following an exponential pattern. 
+The variations of the within-individual repeated measurements 
+appear to {\em change} over time. 
+Moreover, there seem some {\em outliers} in the data, i.e., some data do not seem 
+to follow the general patterns of the whole data. It is interesting to see if these 
+large and time-varying within-individual variations may be partially explained by 
+covariates such as CD4 cell counts. 
+Based on some biological arguments, as well as a set of differential equations which
+describe the viral production and elimination processes, Wu and Ding (1999)
+showed that the viral load trajectories during the treatment may well be modelled by
+an NLME model.
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.6]{/home/lang/Figures/ch9outlier.pdf}
+    \caption{\it\small Viral loads trajectories (in log$_{10}$ scale) during 
+an anti-HIV treatment.} 
+    \label{fig1}
+\end{figure}
+
+   To see if the large and time-varying within-individual variations in longitudinal 
+viral load data may be partially explained by time-varying 
+covariates such as CD4 cell counts, we may model the within-individual variations with 
+time-varying covariates and incorporate the large within-individual variations through 
+random effects in the variance model. In other words, we may jointly model the mean and variance  
+of the longitudinal viral load data: we model the mean based on an NLME model and model the variance 
+using another mixed effects model. The advantages of modelling the 
+within-individual variations, compared to NLME models without modelling the variance,
+ are as follows: (a) we may gain good understanding of 
+the nature of the within-individual variation  and 
+if this variation may be partially explained by covariates; (b) we may obtain 
+more efficient estimates of the main parameters of interest; (c) as will be described 
+in Section 2, modeling variance also allows us to conduct robust inference to 
+address outliers in the data; and (d) we may provide 
+more accurate predictions for the missing/censored response values or future values. 
+
+   For example, by modelling the variance, we may obtain an more efficient 
+estimate of initial viral decay rates, which allows us to better evaluate and compare 
+different treatments since the initial viral decay rates may reflect the 
+efficacies of the treatments (Wu and Ding, 1999). Understanding the nature of the 
+within-individual variations in viral load also allows us to choose good timing for 
+treatment interruption. 
+
+    There is some literature on joint modelling mean and variance for longitudinal 
+data (e.g., Lin et al. 1997; Pourahmadi  1999; Hedeker et al. 2008; German et al. 2022). 
+To our knowledge, all previous work focused on {\em linear} models, either with random effects 
+or without random effects. In this article, we extend previous work to NLME models, and 
+we also address covariate measurement errors and outlying responses. NLME models are 
+{\em nonlinear} in the random effects and the dimension of the 
+random effects may be high, so computation for the joint model can be 
+challenging. In this article, we propose a computationally efficient approximate 
+method for approximate likelihood 
+inference. 
+
+    The article is organized as follows ...
+
+
+
+\section{The Models}
+
+\subsection{The mean and variance models}
+
+      Let $y_{ij}$ be the response value for individual $i$ at time $t_{ij}$, and let 
+ ${\bf y}_i = (y_{i1}, y_{i2}, \cdots, y_{in_i})^T$,  $i=1,2,\cdots,n; \; j=1,2,\cdots,n_i$.  
+We consider the following 
+nonlinear mixed effects (NLME) model
+\begin{eqnarray}
+     {\bf y}_i = g({\bf x}_i, \bbeta, {\bf u}_i) + {\bf e}_i, \qquad\qquad i=1,2,\cdots,n; \;
+j=1,2,\cdots,n_i,   \label{nlme}
+\end{eqnarray}
+where $g(\cdot)$ is a known nonlinear function for the mean $E({\bf y}_i)$, ${\bf x}_i$ contains covariates including 
+time, vector $\bbeta = (\beta_1,\beta_2, \cdots, \beta_p)$ contains (fixed) mean parameters, vector ${\bf u}_i$ contains random effects 
+for the mean function, and 
+ ${\bf e}_i = (e_{i1}, e_{i2}, \cdots, e_{in_i})^T$ are within-individual errors. 
+We assume that ${\bf u}_i \sim N(0, D)$, and $e_{i1}, \cdots e_{in_i} $ are conditionally independent 
+given ${\bf u}_i$, with 
+$ e_{ij} \sim N(0, \sigma_{ij}^2)$. Here we allow the variances of the within-individual random 
+errors, $\sigma^2_{ij}$, to be individual-specific and time-dependent. This allows great 
+flexibility in modeling complicated longitudinal data, as discussed in the previous section. 
+Let $\bsigma_i = (\sigma_{i1}^2, \cdots, \sigma_{in_i}^2)$. 
+
+   To understand the nature of the within-individual variations and check if there are 
+some systematic components in these variations, we investigate if 
+the within-individual variances $\sigma^2_{ij}$ 
+may be partially explained by time-varying covariates (say) ${\bf z}_i = (z_{i1}, \cdots, 
+z_{in_i})$, where $z_{ij}$ is the value of covariate $z$ for individual $i$ at time $t_{ij}$. 
+ Note that covariate ${\bf z}_i$ may be different from covariates ${\bf x}_i$. 
+For simplicity, here we only consider one covariate, but the method can be easily extended 
+to more than one covariates. 
+Moreover, the within-individual variations $\sigma^2_{ij}$ may vary substantially across individuals. 
+Thus, we model the within-individual variations and introduce additional random effects to 
+account for the associations within an individual and variations across individuals, i.e., 
+we consider the following model for the variance 
+\begin{eqnarray}
+     \log(\sigma_{ij}^2) = \alpha_1 + \alpha_2 z_{ij} + \eta a_i,  
+   \qquad i=1,\cdots,n,  \quad j=1,2,\cdots, n_i, \label{var_model}
+\end{eqnarray}
+where vector $\balpha=(\alpha_1, \alpha_2)$ and $\eta$ are fixed parameters, 
+and $a_i$ is a random effect for the variance model. 
+
+We may assume that $\exp(a_i)$ follows 
+an inverse gamma distribution or $a_i \sim N(0, 1)$. 
+In the variance model (\ref{var_model}), we model the log-transformation of the 
+variances, $\log(\sigma_{ij}^2)$, 
+since the variances $\sigma_{ij}^2$ are strictly positive and the range of 
+the log-transformation $\log(\sigma_{ij}^2)$ is 
+$(-\infty, \infty)$, which allows us to introduce arbitrary covariate in the model. 
+
+  In the above mean and variance models, we jointly model the conditional mean
+$E({\bf y}_i | {\bf u}_i) = g({\bf x}_i, \bbeta, {\bf u}_i)$ and the conditional variance
+$Var({\bf y}_i | {\bf u}_i) = diag(\sigma_{i1}^2, \cdots, \sigma_{in_i}^2)$. Modelling the
+variances allows for more efficient estimation of the mean parameters and better understanding
+of the within-individual variabilities.
+
+\subsection{Robust model}
+
+    In the variance model (\ref{var_model}), if we assume that 
+$ \exp(a_i) \sim k/\chi^2_k$, i.e., the inverse $\chi^2$ distribution, 
+which is a special case of 
+a inverse gamma distribution, 
+  then the random errors $e_{ij}$ for the within-individual repeated measurement 
+follow  a $t(k)$-distribution with degrees of freedom $k$ 
+(Lang et al. 1989). The $t(k)$-distribution has heavier tails than the normal distribution,
+ and thus it incorporates possible 
+outliers in the within-individual repeated measurements. 
+The smaller the degrees of freedom $k$, the heavier the tails. 
+The $t(k)$-distribution reduces to the standard 
+ normal distribution when $k \to \infty$. Therefore, in this case models (\ref{nlme}) and 
+(\ref{var_model}) may be used for robust inference. 
+
+   Similarly, we may allow the variances for the random effects for the mean model ${\bf u}_i$ 
+to be individual-specific, i.e., ${\bf u}_i \sim N(0, D_i)$, and model the covariance matrix 
+$D_i$ in a similar way as $\sigma^2_{ij}$. While the approaches are conceptually similar, 
+for simplicity we focus on the variance model (\ref{var_model}) and assume $D_i=D$ in this 
+paper. 
+
+\subsection{Covariate measurement errors}
+
+   The covariate $z_{ij}$ in the variance model may be measured with errors, such as CD4 cell count. 
+The covariate effect on the variance, if any, may be masked if the measurement errors are 
+not addressed. 
+To address the measurement errors, we may view the repeated measurements of 
+the covariate as its ``replicates" in order to estimate the magnitude of the measurement errors
+and model the covariate process using an empirical LME model. 
+
+   Let $z^*_{ij}$ be the unobserved
+true covariate value for individual $i$ at time $t_{ij}$ and let $z_{ij}$ be the corresponding
+observed value with measurement error. We 
+may consider the following mixed effects model as a classic measurement error model 
+\begin{eqnarray}
+{z}_{ij} \equiv {z}^*_{ij} + \epsilon_{ij} = q(t_{ij}, \bgamma, {\bf b}_i) + \epsilon_{ij}, 
+\label{CD4}
+\end{eqnarray}
+where $q(\cdot)$ is a known linear function or a unknown smooth function, $\bgamma$ contains 
+fixed parameters, ${\bf b}_i$ contains random effects, and 
+$\epsilon_{ij}$ is measurement error. 
+We assume that $b_i \sim N(0, B),$ and independently $ \epsilon_{ij} \; i.i.d. \; \sim N(0,
+\omega^2)$.
+
+For example, we may model the CD4 process using 
+a quadratic mixed effects model ${z}_{ij} = \gamma_0+\gamma_1 t_{ij} + \gamma_2 t_{ij}^2
+     + b_i + \epsilon_{ij}$. Alternatively, for more complex CD4 trajectories, we 
+may choose $q(t_{ij}, \bgamma, {\bf b}_i)$ to be a nonparametric smooth function, then 
+approximate it using a basis-based approach, which leads to an approximate LME model (Wu, 2009). 
+In either case, we may consider an LME model for the  measurement error model (\ref{CD4}). 
+
+\section{Approximate Likelihood Inference}
+
+    Let $\btheta = (\bbeta, \bgamma, \bxi)$ denote 
+the collection of all fixed parameters in the models, 
+where $(\bbeta, \bgamma)$ contains fixed mean parameters, and $\bxi = (\balpha, D, \eta, 
+\omega^2)$ 
+contains fixed variance (dispersion) parameters. 
+Let ${\bf v}_i = ({\bf u}_i, a_i, {\bf b}_i)$ denote the collection of all random effects, 
+and let ${\bf v} = ({\bf v}_1, \cdots, {\bf v}_n)$. 
+Standard likelihood inference for $\btheta$ is based on the following 
+(marginal) likelihood function, which integrates out the unobservable random effects  
+\begin{eqnarray*}
+ L(\btheta) = \prod_{i=1}^n \int\int\int f({\bf y}_i | \; {\bf x}_i, {\bf z}_i, 
+  \bbeta, D, \bsigma^2_{i}, {\bf u}_i)
+  f(\bsigma^2_{i} | \balpha, a_i) f({\bf z}_i | \bgamma, {\bf b}_i) f({\bf u}_i, {\bf b}_i, a_i |
+\btheta) \; d {\bf u}_i \; da_i \; d{\bf b}_i,     
+ %% = \prod_{i=1}^m \int f({\bf y}_i | \btheta, {\bf v}_i) 
+ %% f({\bf v}_i | \btheta) \; d {\bf v}_i. 
+\end{eqnarray*} 
+where $f(\cdot)$ denotes a generic density function. 
+The above likelihood involves a high-dimensional and 
+intractable integration.
+Monte Carlo EM algorithms or Gaussian quadrature numerical 
+integration methods can be computationally very intensive. Thus, in the following, we discuss 
+a computationally more efficient  approximate method  for approximate likelihood inference, using  
+the h-likelihood (Lee et al. 2017) or conditional second-order generalized estimating equations 
+(CGEE2, Vonesh et al. 2002). 
+
+
+   The {h-loglikelihood} (Lee et al. 2017) can be written as 
+$$ h(\btheta, {\bf v}) = \sum_{i=1}^n \left\{\log f({\bf y}_i | \; {\bf x}_i, {\bf z}_i,
+  \bbeta, D, \bsigma^2_{i}, {\bf u}_i) + 
+  \log f(\bsigma^2_{i} | \balpha, a_i) + \log f({\bf z}_i | \bgamma, {\bf b}_i) 
+  + \log f({\bf u}_i, {\bf b}_i, a_i |\btheta)\right\}  $$
+where the random effects ${\bf v}_i = ({\bf u}_i, {\bf b}_i, a_i)$ are treated as ``parameters". 
+Given parameter $\btheta$, estimates of the random effects ${\bf v}$ can be obtained by maximizing the 
+h-loglikelihood $h(\btheta, {\bf v})$ with respect to ${\bf v}$, denoted by $\hat{\bf v}$, 
+i.e., $\hat{\bf v}$ solves
+$\partial h(\btheta, {\bf v})/\partial{\bf v}=0$. 
+Then, we can obtain estimates of the parameters $\btheta$ by maximizing $h(\btheta, \hat{\bf v})$. 
+The process iterates until convergence. 
+For binary or discrete response ${\bf y}_i$, Lee et al. (2017) recommends adding an adjusted 
+term to reduce bias and obtain estimates of the parameters $\btheta$ by maximizing the following 
+``adjusted profile likelihood"
+  $$   \log L(\btheta)  \approx p_{\bf v}(h)
+         \equiv \left[h(\btheta, {\bf v})
+         - \frac{1}{2}\log det\{H(h; {\bf v})/(2\pi)\}\right] \Bigg |_{{\bf v}=\hat{\bf v}},   $$
+where the second term is an adjusted term, and 
+$H(h; {\bf v}) = - \partial^2 h/\partial{\bf v}^2$ and $\hat{\bf v}$ solves
+$\partial h/\partial{\bf v}=0$. Lee and Nelder (2001) show that the h-likelihood estimate 
+is the first-order Laplace approximation to the marginal log-likelihood 
+$\log L(\btheta)$.  
+
+
+     Vonesh et al. (2002) proposed the CGEE2 method which also maximizes $h(\btheta, {\bf v})$
+but without the adjusted term. That is, the CGEE2 estimate may be viewed as the 
+h-likelihood estimate without the adjusted term. 
+They showed that their CGEE2 estimate is asymptotically equivalent 
+to the h-likelihood estimate, the linearization estimate of 
+Lindstrom and Bates (1990) for NLME models, and the penalized quasi-likelihood (PQL) estimate of 
+Breslow and Clayton (1993), when both the sample size $n$ and the numbers of repeated 
+measurements $\min_i\{n_i\}$ go to $\infty$. Moreover, they showed that 
+the CGEE2 estimates are consistent and asymptotically normally distributed. 
+Following their ideas, we propose the following iterative algorithm to obtain approximate 
+MLE of the parameter $\btheta = (\bbeta, \bgamma, \bxi)$. Starting with some initial values 
+$(\btheta^{(0)}, {\bf v}^{(0)})$, at iterative $k, k = 0,1,2,\cdots,$ 
+\begin{itemize}
+\item Step 1: Solve equation $\partial h({\btheta}^{(k)}, {\bf v})/\partial{\bf v}=0$ and obtain 
+updated estimate of the random effects $\hat{\bf v}^{(k+1)}$; 
+\item Step 2: Solve equation 
+$\partial h(\bbeta, {\bgamma}, {\bxi}^{(k)}; {\bf v}^{(k+1)})/\partial({\bbeta},{\bgamma})=0$ 
+and obtain  
+updated estimates of the mean parameters $(\bbeta^{(k+1)},{\bgamma}^{(k+1)})$; 
+\item  Step 3: Solve equation
+$\partial h(\bbeta^{(k+1)}, {\bgamma}^{(k+1)}, {\bxi}; {\bf v}^{(k+1)})/\partial{\bxi}=0$ and obtain
+updated estimates of the variance-covariance parameters $\bxi^{(k+1)}$.
+\end{itemize}
+Iterate the above steps until convergence, we obtain approximate MLE $\hat{\btheta}$. 
+Standard errors of the estimates may be obtained from the diagonal elements (square roots) of 
+the inverse of the Fisher information matrix. 
+
+
+\section{A Real Data Example}
+
+    Analyze a real HIV/AIDS dataset using three methods: the Linstrom and Bates (1990) method 
+implemented in R package {\em nlme} without modeling the variances, the two-step method, and 
+the proposed method. The results should show efficiency gain (smaller standard errors) 
+of the estimates $\hat{\bbeta}$ which allow us to compare different treatments more 
+effectively. Estimates of $\balpha$ also allow us to see if CD4 partially explains the 
+within-individual variance $\sigma_{ij}^2$. 
+
+
+\section{Simulation Study}
+
+    In the simulation study, we will evaluate the proposed method and compare it with 
+the Linstrom and Bates (1990) method implemented in R package {\em nlme} without modeling the
+variances and the two-step method. The simulation will be designed in the following ways: 
+i) compare estimates, standard errors, MSEs, and coverage probabilities; ii) bootstrap 
+standard errors (either parametric or nonparametric bootstrap); iii) robustness of the 
+proposed method (with inverse-gamma distribution for $a_i$) for simulated data with 
+5\% outliers (adding a large number, say 10, to 5\% simulated data); iv) different 
+sample size $n$ (say $n=100, 200$) and different values of $n_i$ (say, 15, 30). 
+
+\section{Discussion}
+
+\section*{References}
+
+\begin{description}
+\item German, C.A., Sinsheimer, J.S., Zhou, J., and Zhou, H. (2022). 
+  WiSER: Robust and scalable estimation and inference of
+within-subject variances from intensive longitudinal data. {\it Biometrics}, in press. 
+
+\item Hedeker, D., Mermelstein, R.J., and Demirtas, H. (2008). 
+  An Application of a Mixed-Effects Location Scale Model for Analysis
+of Ecological Momentary Assessment (EMA) Data. {\it Biometrics 64}, 627-634. 
+
+\item Lee, Y.,  Nelder, J.A., and Pawitan, Y. (2017). 
+{\it Generalized Linear Models with Random Effects: Unified Analysis via 
+H-likelihood}, Second edition. London: Chapman \& Hall/CRC.  
+
+\item Lin, X., Raz, J., and Harlow, S.D. (1997). 
+  Linear Mixed Models with Heterogeneous Within-Cluster Variances. {\it Biometrics 53}, 910-923. 
+
+\item Lindstrom, M.J. and Bates, D.M. (1990).   Nonlinear  mixed
+       effects models for repeated measures data. {\it Biometrics {\bf 46}},
+       673-687. 
+
+ \item Noh, M., Wu, L., and Lee, Y. (2012).
+        Hierarchical Likelihood Methods for Nonlinear and
+        Generalized Linear Mixed Models with Missing Data and
+        Measurement Errors in Covariates, {\it Journal of Multivariate Analysis},
+        109, 42-51. 
+
+\item Pourahmadi, M. (1999). Joint mean-covariance models with applications to longitudinal data:
+Unconstrained parameterisation. {\it Biometrika 86}, 677-690. 
+
+\item  Vonesh, E.F., Wang, H., Nie, L., and Majumdar, D. (2002). 
+  Conditional second-order generalized estimating equations for generalized 
+  linear and nonlinear mixed-effects models. 
+ {\it Journal of the American Statistical Association {\bf 97}}, 271-283.
+
+
+\end{description}
+
+\end{document}
+

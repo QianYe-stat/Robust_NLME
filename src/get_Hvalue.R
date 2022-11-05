@@ -9,9 +9,11 @@ get_Hvalue <- function(mat, dim, data=NULL, par.val=NULL, raneff.val=NULL){
                                           eval(parse(text=mat[[kk]])))))
       
       if(length(Di)==1 & !is.null(raneff.val)) Di <- Di*nrow(raneff.val)
-      D[i,j] <- sum(Di)
+      D[i,j] <- sum(Di, na.rm=TRUE)
     }
   }
   
   return(D)
 }
+
+

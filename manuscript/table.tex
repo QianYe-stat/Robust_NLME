@@ -1,0 +1,100 @@
+\documentclass[12pt,epsf]{article}
+\topmargin= -0.25in
+\textwidth=6.25 in
+\textheight=8.80 in
+\oddsidemargin= 0.25in
+\evensidemargin= 0.25in
+\setlength{\parindent}{0.30in}
+%%\setlength{\parskip}{0.20 cm}
+\renewcommand{\baselinestretch}{1.50} 
+\usepackage{epsfig}
+\usepackage[latin1]{inputenc}
+\usepackage{pstricks,pst-text}
+\usepackage{fullpage}
+
+\begin{document}
+
+   In Table 4.1 of data analysis, we do not need to include the ``Naive" method since it 
+is well known that ignoring measurement errors may lead to misleading results and it is 
+also consistent with the tables in the simulation. Also, the notation $\xi^2$ may be changed 
+to $\sigma^2_z$. Below is the revised format for Table 4.1 so that it's easier to read 
+and compare. For JM, please use bootstrap SE and its p-values. 
+ {\bf Please also add results for robust JM.} \\
+
+   In Tables 5.1--5.6 of simulation results, please change the parameter notation $P_1, P_2, \lambda$ 
+to $\beta_j$'s, to be consistent with data analysis. The row orders are also re-arranged so that 
+it's easier to read and compare. Perhaps also include variance parameter estimates? \\ \\
+
+
+\begin{table}
+{\it Table 1. Analyses of the AIDS data under different models.}
+
+\vspace{0.2cm}
+\setlength{\tabcolsep}{0.25 cm}
+\begin{tabular}{llccccccccccccc} \hline\hline
+Model && \multicolumn{8}{c} {Mean parameters} & \multicolumn{5}{c} {Variance parameters}\\
+      && $\beta_1$ & $\beta_2$ & $\beta_3$ & $\alpha_1$ & $\alpha_2$ & 
+        $\gamma_0$ & $\gamma_1$ & $\gamma_2$ & $\sigma^2_a$ &  $\sigma^2_b$ &  $\sigma^2_z$ &
+        $d_1$ & $d_2$ \\ \hline 
+Standard & Est & 2.32 & 2.99 & \multicolumn{11}{c} {.........} \\
+              & SE & \multicolumn{13}{c} {.........} \\
+              & p-val & \multicolumn{13}{c} {.........} \\
+TS & Est & 2.52 & 2.97 & \multicolumn{11}{c} {.........} \\
+              & SE & \multicolumn{13}{c} {.........} \\
+              & p-val & \multicolumn{13}{c} {.........} \\
+JM & Est & 2.52 & 2.96 & \multicolumn{11}{c} {.........} \\
+              & SE.bt & \multicolumn{13}{c} {.........} \\
+              & p-val & \multicolumn{13}{c} {.........} \\ 
+Robust JM & & 2.52 & 2.96 & \multicolumn{11}{c} {.........} \\
+              & Est & \multicolumn{13}{c} {.........} \\
+              & SE.bt & \multicolumn{13}{c} {.........} \\
+              & p-val & \multicolumn{13}{c} {.........} \\ \hline 
+\end{tabular}
+ \vspace{0.2cm} \small
+
+ {\it Standard: the linearization method based on Linstram and Bates (1990). TS: two-step method. 
+ JM: Joint model. }
+\end{table}
+
+\begin{table}
+{\it Table 2. Simulation results.}
+
+\vspace{0.2cm}
+\setlength{\tabcolsep}{0.25 cm}
+\begin{tabular}{llcccccccc} \hline\hline
+Model &Parameter & $\beta_1$ & $\beta_2$ & $\beta_3$ & $\alpha_1$ & $\alpha_2$ &
+                   $\gamma_0$ & $\gamma_1$ & $\gamma_2$ \\ 
+      & True value   & 2.5 & 3.0 & \multicolumn{6}{c} { ........} \\ \hline
+Standard & Estimate & 2.490 & 3.007 & \multicolumn{6}{c} { ........} \\
+         &  SE.mo       & \multicolumn{8}{c} { ........} \\
+         &  SE.em       & \multicolumn{8}{c} { ........} \\
+         & rBias(\%)    & \multicolumn{8}{c} { ........} \\
+         & rMSE(\%)     & \multicolumn{8}{c} { ........} \\
+         & Coverage     & \multicolumn{8}{c} { ........} \\
+ TS      & Estimate & 2.505 & 2.991 & \multicolumn{6}{c} { ........} \\
+         &  SE.mo       & \multicolumn{8}{c} { ........} \\
+         &  SE.em       & \multicolumn{8}{c} { ........} \\
+         & rBias(\%)    & \multicolumn{8}{c} { ........} \\
+         & rMSE(\%)     & \multicolumn{8}{c} { ........} \\
+         & Coverage     & \multicolumn{8}{c} { ........} \\
+ JM      & Estimate & 2.507 & 2.991 & \multicolumn{6}{c} { ........} \\
+         &  SE.mo       & \multicolumn{8}{c} { ........} \\
+         &  SE.em       & \multicolumn{8}{c} { ........} \\
+         &  SE. bt      & \multicolumn{8}{c} { ........} \\
+         & rBias(\%)    & \multicolumn{8}{c} { ........} \\
+         & rMSE(\%)     & \multicolumn{8}{c} { ........} \\
+         & Coverage     & \multicolumn{8}{c} { ........} \\
+         & Coverage.bt  & \multicolumn{8}{c} { ........} \\
+\hline 
+\end{tabular}
+ \vspace{0.2cm} \small
+
+ {\it Standard: the linearization method based on Linstram and Bates (1990). TS: two-step method.
+ JM: Joint model. SE.mo: model-based SE. SE.em: empirical SE from simulation. SE.bt: Bootstrap 
+ SE.  }
+\end{table}
+
+
+\end{document}
+
+

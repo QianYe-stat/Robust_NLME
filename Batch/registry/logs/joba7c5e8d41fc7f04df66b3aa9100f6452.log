@@ -1,0 +1,281 @@
+### [bt]: This is batchtools v0.9.15
+### [bt]: Starting calculation of 1 jobs
+### [bt]: Setting working directory to 'C:/Users/yexip/OneDrive/Documents/UBC_PhD/2021summer/Robust_NLME'
+### [bt]: Memory measurement disabled
+### [bt]: Starting job [batchtools job.id=2]
+### [bt]: Setting seed to 3 ...
+This is run 1 
+--Simulating data
+--Done 
+--Fit NLME() 
+Warning in nlme.formula(lgcopy ~ nf1(p1, p2, p3, day), fixed = p1 + p2 +  :
+  Iteration 1, LME step: nlminb() did not converge (code = 1). Do increase 'msMaxIter'!
+--Done 
+Warning in if (class(nlme.fit) != "try-error") { :
+  the condition has length > 1 and only the first element will be used
+--Runing Two-step model
+############## Iteration: 1 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.47 3.15 7.23 -8.59 1.58 
+FixedParDiff =  0.04533225 
+likDiff =  1 
+dispersion.par: 0.37 1.2 0.69 
+loglike: -2694.707 
+SIGMA: 1 -0.505812 -0.505812 1 
+########################################## 
+############## Iteration: 2 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.46 3.16 7.13 -8.88 1.63 
+FixedParDiff =  0.01730951 
+likDiff =  0.03260531 
+dispersion.par: 0.32 1.37 0.69 
+loglike: -2606.845 
+SIGMA: 1 -0.9408314 -0.9408314 1 
+########################################## 
+############## Iteration: 3 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.45 3.16 7.03 -9.13 1.68 
+FixedParDiff =  0.01497523 
+likDiff =  0.04511477 
+dispersion.par: 0.31 1.37 0.69 
+loglike: -2489.238 
+SIGMA: 1 -0.9876883 -0.9876883 1 
+########################################## 
+############## Iteration: 4 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.44 3.16 6.96 -9.36 1.72 
+FixedParDiff =  0.01255982 
+likDiff =  0.0009715078 
+dispersion.par: 0.31 1.36 0.7 
+loglike: -2486.82 
+SIGMA: 1 -0.9876883 -0.9876883 1 
+########################################## 
+Successful convergence. Iteration stops because likDiff <= itertol.
+Start estimating SD for fixed parameters ...
+ ...
+done.
+Start estimating SD for dispersion parameters ...
+ ...
+done.
+--done
+--Runing Joint model
+############## Iteration: 1 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.47 3.15 7.22 -8.99 1.65 5.2 1.55 -1.16 
+FixedParDiff =  0.04952974 
+likDiff =  1 
+dispersion.par: 0.37 1.19 0.68 0.42 0.2 
+loglike: -2531.227 
+SIGMA: 1 -0.5057179 0 -0.5057179 1 0 0 0 1 
+########################################## 
+############## Iteration: 2 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.46 3.16 7.11 -9.17 1.68 5.2 1.54 -1.15 
+FixedParDiff =  0.00824626 
+likDiff =  0.03484086 
+dispersion.par: 0.32 1.37 0.69 0.43 0.2 
+loglike: -2443.037 
+SIGMA: 1 -0.9399328 0 -0.9399328 1 0 0 0 1 
+########################################## 
+############## Iteration: 3 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.45 3.16 7.02 -9.26 1.7 5.2 1.54 -1.15 
+FixedParDiff =  0.005546681 
+likDiff =  0.04827454 
+dispersion.par: 0.31 1.38 0.69 0.43 0.2 
+loglike: -2325.101 
+SIGMA: 1 -0.9876883 0 -0.9876883 1 0 0 0 1 
+########################################## 
+Successful convergence. Iteration stops because FixedParDiff <= Ptol in consective two iterations.
+Start estimating SD for fixed parameters ...
+ ...
+done.
+Start estimating SD for dispersion parameters ...
+ ...
+done.
+--done
+Warning in while (class(nlme.fit) == "try-error" | class(cd4.fit) == "try-error" |  :
+  the condition has length > 1 and only the first element will be used
+--Runing Bootstrapping SE for Joint model
+
+--done
+This is run 2 
+--Simulating data
+--Done 
+--Fit NLME() 
+Warning in nlme.formula(lgcopy ~ nf1(p1, p2, p3, day), fixed = p1 + p2 +  :
+  Iteration 1, LME step: nlminb() did not converge (code = 1). Do increase 'msMaxIter'!
+Warning in nlme.formula(lgcopy ~ nf1(p1, p2, p3, day), fixed = p1 + p2 +  :
+  Iteration 2, LME step: nlminb() did not converge (code = 1). Do increase 'msMaxIter'!
+Error in nlme.formula(lgcopy ~ nf1(p1, p2, p3, day), fixed = p1 + p2 +  : 
+  maximum number of iterations (maxIter = 50) reached without convergence
+--Done 
+--Simulating data
+--Done 
+--Fit NLME() 
+Warning in nlme.formula(lgcopy ~ nf1(p1, p2, p3, day), fixed = p1 + p2 +  :
+  Iteration 1, LME step: nlminb() did not converge (code = 1). Do increase 'msMaxIter'!
+Warning in nlme.formula(lgcopy ~ nf1(p1, p2, p3, day), fixed = p1 + p2 +  :
+  Iteration 33, LME step: nlminb() did not converge (code = 1). Do increase 'msMaxIter'!
+Error in nlme.formula(lgcopy ~ nf1(p1, p2, p3, day), fixed = p1 + p2 +  : 
+  maximum number of iterations (maxIter = 50) reached without convergence
+--Done 
+--Simulating data
+--Done 
+--Fit NLME() 
+Warning in nlme.formula(lgcopy ~ nf1(p1, p2, p3, day), fixed = p1 + p2 +  :
+  Iteration 1, LME step: nlminb() did not converge (code = 1). Do increase 'msMaxIter'!
+Error in nlme.formula(lgcopy ~ nf1(p1, p2, p3, day), fixed = p1 + p2 +  : 
+  maximum number of iterations (maxIter = 50) reached without convergence
+--Done 
+--Simulating data
+--Done 
+--Fit NLME() 
+--Done 
+Warning in if (class(nlme.fit) != "try-error") { :
+  the condition has length > 1 and only the first element will be used
+--Runing Two-step model
+############## Iteration: 1 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.45 3.12 7.15 -8.28 1.54 
+FixedParDiff =  0.03419007 
+likDiff =  1 
+dispersion.par: 0.37 1.12 0.83 
+loglike: -2887.486 
+SIGMA: 1 -0.545921 -0.545921 1 
+########################################## 
+############## Iteration: 2 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.47 3.12 7.19 -8.3 1.55 
+FixedParDiff =  0.003934454 
+likDiff =  0.03967758 
+dispersion.par: 0.36 0.9 0.83 
+loglike: -2772.917 
+SIGMA: 1 -0.9691817 -0.9691817 1 
+########################################## 
+############## Iteration: 3 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.46 3.11 6.97 -8.35 1.56 
+FixedParDiff =  0.009310235 
+likDiff =  0.03322045 
+dispersion.par: 0.38 0.51 0.83 
+loglike: -2680.8 
+SIGMA: 1 -0.9876883 -0.9876883 1 
+########################################## 
+Successful convergence. Iteration stops because FixedParDiff <= Ptol in consective two iterations.
+Start estimating SD for fixed parameters ...
+ ...
+done.
+Start estimating SD for dispersion parameters ...
+ ...
+done.
+--done
+--Runing Joint model
+############## Iteration: 1 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.45 3.12 7.15 -8.33 1.55 5.28 1.67 -1.27 
+FixedParDiff =  0.03755502 
+likDiff =  1 
+dispersion.par: 0.37 1.12 0.82 0.41 0.2 
+loglike: -2742.964 
+SIGMA: 1 -0.5496626 0 -0.5496626 1 0 0 0 1 
+########################################## 
+############## Iteration: 2 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.47 3.12 7.18 -8.24 1.54 5.28 1.67 -1.28 
+FixedParDiff =  0.003939219 
+likDiff =  0.04217803 
+dispersion.par: 0.36 0.9 0.82 0.41 0.2 
+loglike: -2627.271 
+SIGMA: 1 -0.9698768 0 -0.9698768 1 0 0 0 1 
+########################################## 
+############## Iteration: 3 ############### 
+Start estimating random effects ...
+done.
+Start estimating fixed parameters ... 
+done.
+Start estimating dispersion parameters ... 
+done.
+fixed.par: 2.46 3.11 6.97 -8.17 1.53 5.28 1.66 -1.27 
+FixedParDiff =  0.006693264 
+likDiff =  0.03464734 
+dispersion.par: 0.38 0.51 0.82 0.41 0.2 
+loglike: -2536.243 
+SIGMA: 1 -0.9876883 0 -0.9876883 1 0 0 0 1 
+########################################## 
+Successful convergence. Iteration stops because FixedParDiff <= Ptol in consective two iterations.
+Start estimating SD for fixed parameters ...
+ ...
+done.
+Start estimating SD for dispersion parameters ...
+ ...
+done.
+--done
+Warning in while (class(nlme.fit) == "try-error" | class(cd4.fit) == "try-error" |  :
+  the condition has length > 1 and only the first element will be used
+--Runing Bootstrapping SE for Joint model
+
+--done
+
+### [bt]: Job terminated successfully [batchtools job.id=2]
+### [bt]: Calculation finished!

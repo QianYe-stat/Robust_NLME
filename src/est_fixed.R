@@ -19,7 +19,9 @@ est_fixed <- function(RespLog, long.data, Jfixed,
     par.val$invSIGMA <- invSIGMA0
     
     # evaluate h-likelihood
-    mu.val <- with(long.data, with(par.val, with(B, eval(parse(text=RespLog$mu.loglike)))))
+    mu.val <- unlist(map(RespLog$mu.loglike, function(t){
+      with(long.data, with(par.val, with(B, eval(parse(text=t)))))
+    }))
     
     if(Ysigma) {
       sigma.val <-  with(par.val, with(Bi, eval(parse(text=RespLog$sigma.loglike))))
@@ -38,15 +40,16 @@ est_fixed <- function(RespLog, long.data, Jfixed,
     ran.val <- unlist(ran.val)
     
     # evaluate profile h-likelihood
-    fy <- sum(mu.val)+sum(sigma.val)+sum(randisp.val)+sum(ran.val)  
+    fy <- sum(mu.val,na.rm=TRUE)+sum(sigma.val)+sum(randisp.val)+sum(ran.val)  
     
     return(-fy)
   }
   
   k <-  length(Jfixed)
   
-  gr.mu <- Deriv(RespLog$mu.loglike, Jfixed)
-  
+  gr.mu <- map(RespLog$mu.loglike, function(t){
+    Deriv(t, Jfixed)
+  })
   
   gr <- function(xx){
     fy <- numeric(k)
@@ -59,10 +62,18 @@ est_fixed <- function(RespLog, long.data, Jfixed,
     
     gr.mu.val <- rep(NA, k)
     
-    ##
-    val <- with(long.data, with(par.val, with(B, eval(parse(text=gr.mu)))))
-    val <- matrix(val, ncol=k, byrow=FALSE)
-    gr.mu.val <- as.vector(apply(val, 2, sum))
+    gr.mu.val <- map(gr.mu, function(t){
+      val <- c()
+      for(i in 1:nrow(long.data)){
+        val <- rbind(val, with(long.data[i,], with(par.val, with(B[i,], eval(parse(text=t))))))
+      }
+      val <- val[complete.cases(val),]
+      as.vector(apply(val, 2, sum, na.rm=TRUE))
+    }
+    )
+    
+    gr.mu.val <- apply(do.call(rbind, gr.mu.val), 2, sum)
+  
     
     fy <-  gr.mu.val
     

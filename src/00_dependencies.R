@@ -1,5 +1,6 @@
 
-
+library(dplyr)
+library(fansi)
 library(nlme)
 library(tidyverse)
 library(Deriv)
@@ -16,4 +17,6 @@ library(parallel)
 library(doParallel)
 library(Matrix)
 library(here)
+library(batchtools)
+library(R.utils)
 

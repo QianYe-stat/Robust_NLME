@@ -21,8 +21,9 @@ rm(list=ls())
 (file.sources <- paste0(here::here("src"), "/", file.sources))
 sapply(file.sources,source)
 ######################### Simulation setting
-rep <- 2
-k.runs <- 2 # number of bootstrap runs
+set.seed(1)
+rep <- 10
+k.runs <- 100 # number of bootstrap runs
 n <- 100
 ni <- 15
 N <- n*ni
@@ -169,7 +170,7 @@ nlmeObject_JM <- list(
 nlmeObjects_JM <- list(nlmeObject_JM, lmeObject_JM)
 
 ################################# Simulation runs
-set.seed(123)
+
 est.NLME <- sd.NLME <- est.TS <- sd.TS <-  est.JM <- sd.JM <- c()
 alpha.NLME <- c()
 sd.bt.JM <- sd.bt1.JM <- sd.bt2.JM <- c()
@@ -186,7 +187,7 @@ for(k in 1:rep){
         | TSconvg==FALSE| JMconvg==FALSE){
     
     ##########################  simulate data set
-    
+    cat("--Simulating data\n")
     ## generate random effects
     a0 <- rnorm(n, sd=sigma_a)
     
@@ -224,14 +225,16 @@ for(k in 1:rep){
       simdat <- rbind(simdat, dati)
     }
     
-    simdat <- simdat %>% arrange(patid, day)
-    
+    simdat <- simdat %>% dplyr::arrange(patid, day)
+    cat("--Done \n")
     ########################## Modeling simdat
     #### nlme()
+    cat("--Fit NLME() \n")
     dat_g <- groupedData(lgcopy~day|patid, data=simdat)
-    nlme.fit <- try(nlme(lgcopy~nf1(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1+p3 ~1,
-                     data=dat_g,start=beta))
+    nlme.fit <- withTimeout({try(nlme(lgcopy~nf1(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random  = p1+p3 ~1,
+                     data=dat_g,start=beta))},timeout=1.5,onTimeout="warning")
     
+    cat("--Done \n")
     if(class(nlme.fit)!="try-error"){
       
       #### Two step
@@ -285,18 +288,18 @@ for(k in 1:rep){
   sd.bt1.JM <- rbind(sd.bt1.JM, JM.SD.BT$se.bt1)
   sd.bt2.JM <- rbind(sd.bt2.JM, JM.SD.BT$se.bt2)
   
-  
+}
   ##################### organize output 
   
   colnames(est.TS) <- colnames(sd.TS) <-   colnames(sd.JM) <- colnames(est.JM)
   colnames(sd.bt.JM) <- colnames(sd.bt1.JM) <-colnames(sd.bt2.JM) <- colnames(est.JM)
-  
+
   
   NLME.out <- list(True=beta,Est=est.NLME, SD=sd.NLME)
   TS.out <- list(True=true.fixed,Est=est.TS, SD=sd.TS)
-  JM.out <- list(True=true.fixed,Est=est.JM, SD=sd.JM, SD.BT=sd.bt.JM, SD.BT1=sd.bt1.JM, SD.BT2=sd.bt2.JM)
+  JM.out <- list(True=true.fixed,Est=est.JM, SD=sd.JM,
+                 SD.BT=sd.bt.JM, SD.BT1=sd.bt1.JM, SD.BT2=sd.bt2.JM)
   
-}
 
 big <- 15
 rm.big <- function(out, big){
@@ -402,7 +405,10 @@ xtable(cbind(rbind(nl,0,0,0,0,0), ts, jm), type = "latex",digits = 3)
 cat("\n xtable for output with large rBias removed \n ")
 xtable(cbind(rbind(nl1,0,0,0,0,0),ts1, jm1), type = "latex",digits = 3)
 
-#save.image(here::here("results", "sim_JM.RData"))
-#saveRDS(map(TS.out, get_summary), here::here("results", "TS_out.rds"))
-#saveRDS(map(JM.out, get_summary), here::here("results", "JM_out.rds"))
+saveRDS(list(NLME.out=NLME.out,TS.out=TS.out,JM.out=JM.out, alpha.NLME=alpha.NLME), 
+        here::here("s1.rds"))
+
+save.image(here::here("s1.RData"))
+
+
 

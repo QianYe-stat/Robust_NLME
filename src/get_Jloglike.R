@@ -38,7 +38,7 @@ get_Jloglike <- function(nlmeObjects){
   
   Jraneff <- c(parSIGMA, parNSIG)
   
-  mu.loglike <- paste0("(", unlist(mu.loglike), ")", collapse="+")
+  #mu.loglike <- paste0("(", unlist(mu.loglike), ")", collapse="+")
   sigma.loglike <- paste0("(", unlist(sigma.loglike), ")", collapse="+")
   
   # likelihood of random effects

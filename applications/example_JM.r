@@ -52,7 +52,7 @@ nlme.fit <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1+p2+p3 
 nlme.fit1 <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1+p3 ~1,
                   data =dat1,start=c(start))
 anova(nlme.fit, nlme.fit1)
-summary(nlme.fit)
+summary(nlme.fit1)
 
 ## model for cd4
 cd4.fit <- lme(cd4~day+I(day^2), data=dat, random=~1|patid)

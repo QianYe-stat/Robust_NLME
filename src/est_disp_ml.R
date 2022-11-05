@@ -37,7 +37,11 @@ est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
     
     
     # evaluate the h-likelihood
-    mu.val <- with(long.data, with(par.val, with(B, eval(parse(text=RespLog$mu.loglike)))))
+    
+    mu.val <- unlist(map(RespLog$mu.loglike, function(t){
+      with(long.data, with(par.val, with(B, eval(parse(text=t)))))
+    }))
+    
     if(Ysigma){
       sigma.val <- with(par.val, with(Bi, eval(parse(text=RespLog$sigma.loglike))))
     } else sigma.val <- 0
@@ -54,15 +58,16 @@ est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
     ran.val <- unlist(ran.val) 
     
     # evaluate the adjusted profile h-likelihood
-    fy <- sum(mu.val)+sum(sigma.val)+sum(randisp.val)+sum(ran.val)
+    fy <- sum(mu.val, na.rm=TRUE)+sum(sigma.val)+sum(randisp.val)+sum(ran.val)
     
     return(-fy)
   }
   
   k <- length(Jdisp_new)
-  
-  gr.mu <- Deriv(RespLog$mu.loglike, Jdisp)
-  
+
+  gr.mu <- map(RespLog$mu.loglike, function(t){
+     Deriv(t, Jdisp)
+  })
   gr.ran <- Deriv(ran.loglike, Jdisp_new)
   
   ############ gradient function
@@ -76,12 +81,17 @@ est_disp_ml <- function(RespLog, long.data, Jdisp,Jfixed, Jraneff,
     
     
     # derivative of sd parameters 
-    gr.mu.val <- c()
-    for(i in 1:nrow(B)){
-      val <-  with(par.val, with(long.data[i,], with(B[i,], eval(parse(text=gr.mu)))))
-      gr.mu.val <- rbind(gr.mu.val, val)
-    }
-    gr.mu.val <- c(apply(gr.mu.val, 2, sum), rep(0, qL))
+    gr.mu.val <- map(gr.mu, function(t){
+      val <- c()
+      for(i in 1:nrow(B)){
+      val <- rbind(val, with(par.val, with(long.data[i,], with(B[i,], eval(parse(text=t))))))
+      }
+      val <- val[complete.cases(val),]
+      c(apply(val, 2, sum, na.rm=TRUE), rep(0, qL))
+    })
+
+    
+    gr.mu.val <- apply(do.call(rbind, gr.mu.val), 2, sum)
     
     if(!is.null(Lmat$Mpar)){
       gr.ran.val <- c()
