@@ -2,7 +2,7 @@
 rm(list=ls())
 library(xtable)
 library(purrr)
-res <- readRDS(here::here("Batch","sim15", "s1.rds"))
+res <- readRDS(here::here("Batch","sim9", "s1.rds"))
 NLME.out <- res$NLME.out
 TS.out <- res$TS.out
 JM.out <- res$JM.out
@@ -10,7 +10,7 @@ alpha.NLME <- res$alpha.NLME
 
 for(i in 2:10){
   filename <- paste0("s", i, ".rds")
-  res <- readRDS(here::here("batch","sim15", filename))
+  res <- readRDS(here::here("batch","sim9", filename))
   NLME.out <- map2(NLME.out, res$NLME.out, rbind)
   TS.out <- map2(TS.out, res$TS.out, rbind)
   JM.out <- map2(JM.out, res$JM.out, rbind)
@@ -43,9 +43,9 @@ get_summary<- function(out){
   
   Bais_mat <- t(apply(out$Est, 1, FUN=function(t){t-out$True}))
   
-  rBias <- abs(Est-out$True)/abs(out$True)*100
+  rBias <- (Est-out$True)/abs(out$True)*100
   
-  rMSE <-  apply(Bais_mat, 2, FUN=function(t){mean(t^2, na.rm=TRUE)})/abs(out$True)*100
+  rMSE <-  apply(Bais_mat, 2, FUN=function(t){sqrt(mean(t^2, na.rm=TRUE))})/abs(out$True)*100
   
   SE.em <- apply(out$Est, 2, sd, na.rm=TRUE)
   
@@ -89,10 +89,11 @@ get_summary<- function(out){
     
   }
   
-  res <- cbind(Est, rBias, rMSE, SE.em, SE, Coverage)
+  #res <- cbind(Est, rBias, rMSE, SE.em, SE, Coverage)
+  res <- cbind(Est, SE, SE.em, rBias, rMSE, Coverage)
   
-  if(!is.null(out$SD.BT)) res <- cbind(Est, rBias, rMSE, SE.em, SE, Coverage, 
-                                       SE.BT, Coverage.bt,
+  if(!is.null(out$SD.BT)) res <- cbind(Est, SE, SE.em, SE.BT, rBias, rMSE, Coverage, 
+                                       Coverage.bt,
                                        SE.BT1, Coverage.bt1,
                                        SE.BT2, Coverage.bt2)
   
@@ -117,11 +118,11 @@ JM.out1 <- rm.big(JM.out, big)$out_df
 (jm1 <- get_summary(JM.out1))
 
 cat("\n xtable for original output \n ")
-xtable(t(cbind(rbind(nl,0,0,0,0,0), ts, jm[,c(1:8)])), type = "latex",digits = 3)
+xtable(t(cbind(rbind(nl,0,0,0,0,0), ts, jm[,c(1:8)])), type = "latex",digits = 2)
 
 
 cat("\n xtable for output with large rBias removed \n ")
-xtable(cbind(rbind(nl1,0,0,0,0,0),ts1, jm1[,c(1:6,11,12)]), type = "latex",digits = 3)
+xtable(cbind(rbind(nl1,0,0,0,0,0),ts1, jm1[,c(1:6,11,12)]), type = "latex",digits = 2)
 
 runs.bt1 <- c(25.1,21.7,25.9,25,24,24.6, 23.4, 22.4, 21.9, 22.2)
 runs.bt2 <- c(39.2,36.4,37.5,37.2,38.3,36.9,36.6, 36.1, 36.4, 35.7)
