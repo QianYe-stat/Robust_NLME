@@ -21,10 +21,16 @@ set.seed(123)
 dat0 <- read.table(here::here("data","s315.txt"), header=TRUE)
 names(dat0)
 
+# create a binary varaible to flag different treatment
+
+n0 <- length(unique(dat0$patid)) 
+ni <- tapply(dat0$day, dat0$patid, length)
+Trt0 <- rbinom(n0, 1, 0.6)
+dat0$Trt <- rep(Trt0, ni)
 
 dat0 <- dat0 %>% 
   arrange(patid, day)%>%
-  dplyr::select(patid, lgcopy, day, cd4) %>% 
+  dplyr::select(patid, lgcopy, day, cd4, Trt) %>% 
   mutate(day1=day,day=day/max(day), cd4=log(cd4))
 length(unique(dat0$patid))
 table(dat0$day1)
@@ -113,31 +119,31 @@ ggplot(dat, aes(day, resid_lme, group=patid)) +
   facet_wrap(~patid, ncol=9)
 
 ### nlme
-nf <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
-start0 <- c(p1=10,p2=6,p3=5)
-nls.fit  <- nls(lgcopy~nf(p1,p2,p3, day), data=dat, start=start0)
+nf <- function(p1,p2,p3, p4, t, trt) p1+p2*exp(-(p3+p4*trt)*t)
+start0 <- c(p1=10,p2=6,p3=5, p4=5)
+nls.fit  <- nls(lgcopy~nf(p1,p2,p3, p4, day, Trt), data=dat, start=start0)
 start <- coef(nls.fit)
 
 # Model 1: random p1
-nlme1 <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1 ~1,
+nlme1 <- nlme(lgcopy~nf(p1,p2,p3, p4, day, Trt),fixed = p1+p2+p3+p4 ~1,random = p1 ~1,
                  data =dat1,start=c(start))
 # Model 2: random p1 p2
-nlme2 <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1+p2 ~1,
+nlme2 <- nlme(lgcopy~nf(p1,p2,p3, p4, day, Trt),fixed = p1+p2+p3+p4 ~1,random = p1+p2 ~1,
               data =dat1,start=c(start))
 # Model 3: random p1 p3
-nlme3 <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1+p3 ~1,
+nlme3 <- nlme(lgcopy~nf(p1,p2,p3, p4, day, Trt),fixed = p1+p2+p3+p4 ~1,random = p1+p3 ~1,
               data =dat1,start=c(start))
 # Model 4: random p1 p2 p3
-nlme4 <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p1+p2+p3 ~1,
+nlme4 <- nlme(lgcopy~nf(p1,p2,p3, p4, day, Trt),fixed = p1+p2+p3+p4 ~1,random = p1+p2+p3 ~1,
               data =dat1,start=c(start))
 # Model 5: random p2
-nlme5 <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p2 ~1,
+nlme5 <- nlme(lgcopy~nf(p1,p2,p3,p4, day, Trt),fixed = p1+p2+p3+p4 ~1,random = p2 ~1,
               data =dat1,start=c(start))
 # Model 6: random p2 p3
-nlme6 <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p2+p3 ~1,
+nlme6 <- nlme(lgcopy~nf(p1,p2,p3,p4, day, Trt),fixed = p1+p2+p3+p4 ~1,random = p2+p3 ~1,
               data =dat1,start=c(start))
 # Model 7: random p3
-nlme7 <- nlme(lgcopy~nf(p1,p2,p3, day),fixed = p1+p2+p3 ~1,random = p3 ~1,
+nlme7 <- nlme(lgcopy~nf(p1,p2,p3, p4, day, Trt),fixed = p1+p2+p3+p4 ~1,random = p3 ~1,
               data =dat1,start=c(start))
 anova(nlme1, nlme3)
 anova(nlme1, nlme3)
@@ -163,7 +169,7 @@ ggplot(dat1, aes(day, resid_nlme, group=patid)) +
   facet_wrap(~patid, ncol=9)
 
 ### Rnlme: use raw cd4 to model the residual variance
-nf1 <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
+nf1 <- function(p1,p2,p3,p4,t, trt) p1+p2*exp(-(p3+p4*trt)*t)
 nf2 <- function(p1,p2,p3,t) p1+p2*t+p3*t^2
 sigma <- list(
   model=~1+cd4+(1|patid),
@@ -181,9 +187,9 @@ sigma <- list(
 
 RnlmeObject <- list(
   nf = "nf1",
-  model= lgcopy ~ nf(p1,p2,p3,day),
-  var=c("day"),
-  fixed = p1+p2+p3 ~1,
+  model= lgcopy ~ nf(p1,p2,p3,p4, day, Trt),
+  var=c("day", "Trt"),
+  fixed = p1+p2+p3+p4 ~1,
   random = p1+p3 ~1,
   family='normal', 
   ran.dist='normal',
@@ -195,7 +201,7 @@ RnlmeObject <- list(
   str.fixed=fixef(nlme),  # starting value for fixed effect
   str.disp=apply(ranef(nlme),2,sd),  # starting value for fixed dispersion of random eff
   lower.fixed=NULL, # lower bounds for fixed eff
-  upper.fixed=rep(100,3), # upper bounds for fixed eff
+  upper.fixed=rep(100,4), # upper bounds for fixed eff
   lower.disp=c(0,0), # lower bounds for fixed dispersion of random eff
   upper.disp=c(Inf,Inf) # upper bounds for  fixed dispersion of random eff
 )

@@ -2,7 +2,7 @@
 # calculate hessian matrix 
 
 get_Hessian <- function(loglik, pars){
-  loglik <- parse(text=loglik)
+  loglik_expr <- parse(text=loglik)
   q <- length(pars)
   result <- as.list(rep(NA, q^2))
   
@@ -10,12 +10,17 @@ get_Hessian <- function(loglik, pars){
   for(i in 1:q){
     for(j in 1:q){
       k <- (i-1)*q+j
-      Fst <- Deriv(loglik, pars[i])
-      if(suppressWarnings(str_detect(Fst, "as.matrix"))) {
-        Fst <- suppressWarnings(str_remove(Fst, "as.matrix"))
-        Fst <- parse(text=Fst)
+      
+      Fst_expr <- Deriv(loglik_expr, pars[i])
+      Fst_char <- Deriv(loglik, pars[i])
+      
+      if(any(str_detect(Fst_char, "as.matrix"))) {
+        
+        Fst_char <- str_remove(Fst_char, "as.matrix")
+        result[[k]] <- Deriv(Fst_char, pars[j])
+      } else {
+        result[[k]] <- Deriv(Fst_expr, pars[j]) 
       }
-      result[[k]] <- Deriv(Fst, pars[j]) 
       names(result)[k] <- paste(pars[i], pars[j],sep=",")
     }
   }

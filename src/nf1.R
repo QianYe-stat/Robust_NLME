@@ -1,3 +1,3 @@
 
-nf1 <- function(p1,p2,p3,t) p1+p2*exp(-p3*t)
+nf1 <- function(p1,p2,p3, p4,t, trt) p1+p2*exp(-(p3+p4*trt)*t)
 

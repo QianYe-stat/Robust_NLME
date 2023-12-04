@@ -9,7 +9,7 @@ get_Jloglike <- function(nlmeObjects){
   for(i in 1:k){
     nlmeObject_i <- nlmeObjects[[i]]
     
-    nlmeReturn <- get_nlme_loglike(nlmeObject_i)
+    nlmeReturn <- get_nlme_loglike(nlmeObject=nlmeObject_i)
     
     lik <- nlmeReturn$loglike
     
