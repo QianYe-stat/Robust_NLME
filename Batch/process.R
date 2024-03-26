@@ -3,20 +3,26 @@ rm(list=ls())
 library(xtable)
 library(purrr)
 res <- readRDS(here::here("Batch","sim9", "s1.rds"))
+
+res <- readRDS(here::here("simulation for paper revision", "sim3" ,"s1.rds"))
+
 NLME.out <- res$NLME.out
+OS.out <- res$OS.out
 TS.out <- res$TS.out
 JM.out <- res$JM.out
 alpha.NLME <- res$alpha.NLME
 
+
 for(i in 2:10){
   filename <- paste0("s", i, ".rds")
-  res <- readRDS(here::here("batch","sim9", filename))
+  res <- readRDS(here::here("simulation for paper revision","sim3", filename))
   NLME.out <- map2(NLME.out, res$NLME.out, rbind)
   TS.out <- map2(TS.out, res$TS.out, rbind)
   JM.out <- map2(JM.out, res$JM.out, rbind)
   alpha.NLME <- c(alpha.NLME, res$alpha.NLME)
 }
 NLME.out$True <- NLME.out$True[1,]
+OS.out$True <- OS.out$True
 TS.out$True <- TS.out$True[1,]
 JM.out$True <- JM.out$True[1,]
 
@@ -87,15 +93,25 @@ get_summary<- function(out){
       Coverage.bt2 <- c(Coverage.bt2, mean(cov, na.rm=TRUE))
     }
     
+    Pred.Bias.BT <-  apply(out$Pred.Bias.BT, 2, mean, na.rm=TRUE)
+    Pred.MSE.BT <-  apply(out$Pred.MSE.BT, 2, mean, na.rm=TRUE)
+    Pred.Coverage.BT <-  apply(out$Pred.Coverage.BT, 2, mean, na.rm=TRUE)
+     
   }
   
-  #res <- cbind(Est, rBias, rMSE, SE.em, SE, Coverage)
-  res <- cbind(Est, SE, SE.em, rBias, rMSE, Coverage)
+  Pred.Bias <-  apply(out$Pred.Bias, 2, mean, na.rm=TRUE)
+  Pred.MSE <-  apply(out$Pred.MSE, 2, mean, na.rm=TRUE)
+  Pred.Coverage <-  apply(out$Pred.Coverage, 2, mean, na.rm=TRUE)
+
+  res <- list(Estimamtion=cbind(Est, SE, SE.em, rBias, rMSE, Coverage),
+              Prediction=rbind(Pred.Bias, Pred.MSE, Pred.Coverage))
   
-  if(!is.null(out$SD.BT)) res <- cbind(Est, SE, SE.em, SE.BT, rBias, rMSE, Coverage, 
+  if(!is.null(out$SD.BT)) res <- list(Estimation=cbind(Est, SE, SE.em, SE.BT, rBias, rMSE, Coverage, 
                                        Coverage.bt,
                                        SE.BT1, Coverage.bt1,
-                                       SE.BT2, Coverage.bt2)
+                                       SE.BT2, Coverage.bt2),
+                                      Prediction=rbind(Pred.Bias, Pred.MSE, Pred.Coverage,
+                                                       Pred.Bias.BT, Pred.MSE.BT, Pred.Coverage.BT))
   
   res
 }
@@ -103,6 +119,7 @@ get_summary<- function(out){
 
 (nl <- get_summary(NLME.out))
 mean(alpha.NLME)
+(os <- get_summary(OS.out))
 (ts <- get_summary(TS.out))
 (jm <- get_summary(JM.out))
 
@@ -118,8 +135,8 @@ JM.out1 <- rm.big(JM.out, big)$out_df
 (jm1 <- get_summary(JM.out1))
 
 cat("\n xtable for original output \n ")
-xtable(t(cbind(rbind(nl,0,0,0,0,0), ts, jm[,c(1:8)])), type = "latex",digits = 2)
-
+xtable(t(cbind(rbind(nl$Estimamtion,0,0,0,0,0),rbind(os$Estimamtion, 0, 0, 0,0),ts$Estimamtion, jm$Estimation[,c(1:8)])), type = "latex",digits = 2)
+xtable(rbind(nl$Prediction,os$Prediction,ts$Prediction,jm$Prediction), type = "latex",digits = 2)
 
 cat("\n xtable for output with large rBias removed \n ")
 xtable(cbind(rbind(nl1,0,0,0,0,0),ts1, jm1[,c(1:6,11,12)]), type = "latex",digits = 2)
