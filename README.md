@@ -30,12 +30,21 @@
   + `01_preprocess.R`: reprocess the raw data and produce clean data for analysis
   + `02_model.R`:
   
-### How to re-produce the simulation output
-+ You can either run the following R scripts step by step
-  + `00_dependencies.R`
-  + `01_data.R`
-  + `02_cluster_normalize.R`
-  + `03_summary_output.R`
+### How to re-produce the results in the paper
+> Download the entire repo in your local path
+
+> Simulations
+  
+  + Run each file in the `/simulation` folder
+
+
+> Real data analysis
+  
+  + Run the following R scripts in the `\real data analysis` step by step
+    + `00_dependencies.R`
+    + `01_data.R`
+    + `02_cluster_normalize.R`
+    + `03_summary_output.R`
   
 
   
