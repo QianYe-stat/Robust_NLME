@@ -354,15 +354,35 @@ display: none;
 
 <div id="robust_nlme" class="section level1">
 <h1>Robust_NLME</h1>
+<div id="this-repo-contains-r-code-that-was-used-for-the-real-data-analysis-and-simulations-in-my-paper-jointly-modeling-means-and-variances-for-nonlinear-mixed-effects-models-with-measurement-errors-and-outliers" class="section level2">
+<h2>This repo contains R code that was used for the real data analysis
+and simulations in my paper ``Jointly Modeling Means and Variances for
+Nonlinear Mixed Effects Models with Measurement Errors and
+Outliers’’</h2>
+<hr />
+<div id="whats-in-the-repo" class="section level3">
+<h3>What’s in the repo</h3>
 <ul>
-<li><p>This is the supporting information for my paper ``Jointly
-Modeling Means and Variances for Nonlinear Mixed Effects Models with
-Measurement Errors and Outliers’’</p></li>
-<li><p>This repo R code that was used for the real data analysis and
-simulations in the paper</p></li>
+<li><code>/src</code>: Source code
+<ul>
+<li><code>00_dependencies.R</code>: the dependencies packages<br />
+</li>
+<li><code>Rnlme.R</code>: the function which jointly models mean and
+variance for NLME. Measurement error model can be added if needed.</li>
+<li><code>get_sd_bootstrap1.R</code>: the function produces adjusted SD
+by using parametric bootstrapping, when the random effect <span class="math inline">\(a_i\)</span> (see Model (2) in the paper) follows
+a normal distribution</li>
+<li><code>get_sd_bootstrap2.R</code>: the function produces adjusted SD
+by using parametric bootstrapping, when the random effect <span class="math inline">\(a_i\)</span> (see Model (2) in the paper) follows
+an inverse <span class="math inline">\(\chi^2\)</span> distribution</li>
+<li><code>get_Jloglike.R</code>, <code>est_fixed.R</code>, etc: all the
+other R files are self-defined functions sourced in the above functions
+and main analysis.</li>
+</ul></li>
+<li><code>/simulation</code>: files for different simulation
+setting</li>
 </ul>
-<div id="whats-in-the-repo" class="section level2">
-<h2>What’s in the repo</h2>
+</div>
 </div>
 </div>
 
