@@ -413,9 +413,9 @@ cat("\n xtable for output with large rBias removed \n ")
 xtable(cbind(rbind(nl1,0,0,0,0,0),ts1, jm1), type = "latex",digits = 3)
 
 saveRDS(list(NLME.out=NLME.out,TS.out=TS.out,JM.out=JM.out, alpha.NLME=alpha.NLME), 
-        here::here("s1.rds"))
+        here::here("s4.rds"))
 
-save.image(here::here("s1.RData"))
+save.image(here::here("s4.RData"))
 
 
 
