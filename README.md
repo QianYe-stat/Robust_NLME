@@ -12,22 +12,32 @@
   + `get_sd_bootstrap1.R`: the function produces adjusted SD by using parametric bootstrapping, when the random effect $a_i$ (see Model (2) in the paper) follows a normal distribution
   + `get_sd_bootstrap2.R`: the function produces adjusted SD by using parametric bootstrapping, when the random effect $a_i$ (see Model (2) in the paper) follows an inverse $\chi^2$ distribution
   + `get_Jloglike.R`, `est_fixed.R`, etc: all the other R files are self-defined functions sourced in the above functions and main analysis. 
-  
+
++ `/data`: 
+  + `/toy data`:
+  + `/DTP data`: (**EMPTY**) DTP data used in the real analysis. The data that support the findings of this study are available on request from the corresponding author. The data are not publicly available due to privacy or ethical restrictions.
+
 + `/simulation`: R files for different simulation settings (*see details about the simulation design in my paper Section 5*)
   + `Setting_I`: Setting I
   + `Setting_II_df=3`: Setting II with df=3
   + `Setting_II_df=5`: Setting II with df=5
   + `Setting_III`: Setting III (*The corresponding results shown in the Supplementery Materials*)
   + `Setting_IV`: Setting IV (*The corresponding results shown in the Supplementery Materials*)
+  + `Setting_SUPP`: A supplementary simulation setting (*The corresponding results shown in the Supplementery Materials*)
   
 + `/real data analysis`: R files for real data analysis (*see details in my paper Section 4*)
-  +
-  +
-  +
+  + `00_dependencies.R`: the dependencies packages 
+  + `01_preprocess.R`: reprocess the raw data and produce clean data for analysis
+  + `02_model.R`:
   
-+ `/data`: 
-  + `/toy data`:
-  + `/DTP data`: (**EMPTY**) DTP data used in the real analysis. The data that support the findings of this study are available on request from the corresponding author. The data are not publicly available due to privacy or ethical restrictions.
+### How to re-produce the simulation output
++ You can either run the following R scripts step by step
+  + `00_dependencies.R`
+  + `01_data.R`
+  + `02_cluster_normalize.R`
+  + `03_summary_output.R`
+  
+
   
   
   

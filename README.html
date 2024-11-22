@@ -379,6 +379,14 @@ an inverse <span class="math inline">\(\chi^2\)</span> distribution</li>
 other R files are self-defined functions sourced in the above functions
 and main analysis.</li>
 </ul></li>
+<li><code>/data</code>:
+<ul>
+<li><code>/toy data</code>:</li>
+<li><code>/DTP data</code>: (<strong>EMPTY</strong>) DTP data used in
+the real analysis. The data that support the findings of this study are
+available on request from the corresponding author. The data are not
+publicly available due to privacy or ethical restrictions.</li>
+</ul></li>
 <li><code>/simulation</code>: R files for different simulation settings
 (<em>see details about the simulation design in my paper Section 5</em>)
 <ul>
@@ -389,21 +397,29 @@ and main analysis.</li>
 shown in the Supplementery Materials</em>)</li>
 <li><code>Setting_IV</code>: Setting IV (<em>The corresponding results
 shown in the Supplementery Materials</em>)</li>
+<li><code>Setting_SUPP</code>: A supplementary simulation setting
+(<em>The corresponding results shown in the Supplementery
+Materials</em>)</li>
 </ul></li>
 <li><code>/real data analysis</code>: R files for real data analysis
 (<em>see details in my paper Section 4</em>)
 <ul>
-<li></li>
-<li></li>
-<li></li>
+<li><code>00_dependencies.R</code>: the dependencies packages</li>
+<li><code>01_preprocess.R</code>: reprocess the raw data and produce
+clean data for analysis</li>
+<li><code>02_model.R</code>:</li>
 </ul></li>
-<li><code>/data</code>:
+</ul>
+</div>
+<div id="how-to-re-produce-the-simulation-output" class="section level3">
+<h3>How to re-produce the simulation output</h3>
 <ul>
-<li><code>/toy data</code>:</li>
-<li><code>/DTP data</code>: (<strong>EMPTY</strong>) DTP data used in
-the real analysis. The data that support the findings of this study are
-available on request from the corresponding author. The data are not
-publicly available due to privacy or ethical restrictions.</li>
+<li>You can either run the following R scripts step by step
+<ul>
+<li><code>00_dependencies.R</code></li>
+<li><code>01_data.R</code></li>
+<li><code>02_cluster_normalize.R</code></li>
+<li><code>03_summary_output.R</code></li>
 </ul></li>
 </ul>
 </div>
