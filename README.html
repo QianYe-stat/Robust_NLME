@@ -384,11 +384,11 @@ and main analysis.</li>
 <p><code>/data</code>:</p>
 </blockquote>
 <ul>
-<li><code>/toy data</code>:</li>
-<li><code>/DTP data</code>: (<strong>EMPTY</strong>) DTP data used in
+<li><code>/toy data</code>: A toy data generated from simulation to
+illustrate how to use our methods.</li>
+<li><code>raw_data.csv</code>: (<strong>EMPTY</strong>) DTP data used in
 the real analysis. The data that support the findings of this study are
-available on request from the corresponding author. The data are not
-publicly available due to privacy or ethical restrictions.</li>
+confidential due to privacy or ethical restrictions.</li>
 </ul>
 <blockquote>
 <p><code>/simulation</code>: R files for different simulation settings
@@ -417,6 +417,10 @@ Materials</em>)</li>
 clean data for analysis</li>
 <li><code>02_model.R</code>:</li>
 </ul>
+<blockquote>
+<p><code>/figures</code>: figures used in the paper based on the real
+data analysis</p>
+</blockquote>
 </div>
 <div id="how-to-re-produce-the-results-in-the-paper" class="section level3">
 <h3>How to re-produce the results in the paper</h3>
@@ -436,12 +440,17 @@ clean data for analysis</li>
 <li>Run the following R scripts in the <code>\real data analysis</code>
 step by step
 <ul>
-<li><code>00_dependencies.R</code></li>
-<li><code>01_data.R</code></li>
-<li><code>02_cluster_normalize.R</code></li>
-<li><code>03_summary_output.R</code></li>
+<li><code>00_dependencies.R</code>: install all dependencies
+packages</li>
+<li><code>01_data_process.R</code>: pre-process the raw data; make and
+save the analytic data</li>
+<li><code>02_model_fitting_adj_trt.R</code>: fit models for three
+methods: LB, TS, and JM</li>
 </ul></li>
 </ul>
+</div>
+<div id="example-apply-the-proposed-methods-to-the-toy-data" class="section level3">
+<h3>Example: apply the proposed methods to the toy data</h3>
 </div>
 </div>
 </div>
