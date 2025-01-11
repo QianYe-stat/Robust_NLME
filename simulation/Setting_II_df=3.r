@@ -197,7 +197,7 @@ for(k in 1:rep){
   class(nlme.fit) <- class(cd4.fit) <- class(TS) <- class(JM)<- "try-error"
   TSconvg <- JMconvg <-  FALSE
   
-  while(class(nlme.fit)=="try-error"|class(cd4.fit)=="try-error" | class(JM)=="try-error" | class(TS)=="try-error"
+  while(class(nlme.fit)[1]=="try-error"|class(cd4.fit)=="try-error" | class(JM)=="try-error" | class(TS)=="try-error"
         | TSconvg==FALSE| JMconvg==FALSE){
     
     ##########################  simulate data set
@@ -260,7 +260,7 @@ for(k in 1:rep){
                                       data=dat_g,start=beta))},timeout=1.5,onTimeout="warning")
     
     cat("--Done \n")
-    if(class(nlme.fit)!="try-error"){
+    if(class(nlme.fit)[1]!="try-error"){
       
       #### Two step
       
