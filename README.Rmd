@@ -88,7 +88,7 @@ sapply(file.sources,source)
 ###############################################
 
 #### Read in the data
-simdat <- read_csv(here::here("data","toy_data.csv"))
+simdat <- readRDS(here::here("data","toy_data.rds"))
 
 # 100 unique patients
 # 15 repeated measurements per patient
