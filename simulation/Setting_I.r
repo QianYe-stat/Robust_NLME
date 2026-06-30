@@ -175,6 +175,7 @@ nlmeObject_JM <- list(
 )
 
 nlmeObjects_JM <- list(nlmeObject_JM, lmeObject_JM)
+get_Jloglike(nlmeObjects_JM)
 
 ################################# Simulation runs
 
